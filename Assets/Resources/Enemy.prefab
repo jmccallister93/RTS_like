@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2784944571112848046}
   - component: {fileID: 2618169009584601141}
   - component: {fileID: 2660253623879504042}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Handle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -89,7 +89,7 @@ GameObject:
   - component: {fileID: 4049546085487202545}
   - component: {fileID: 6341198594044653373}
   - component: {fileID: 8453997916845542654}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: HealthTracker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -221,7 +221,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2133766709110044685}
   - component: {fileID: 8189599269461999368}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: HealthBarSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -319,9 +319,10 @@ GameObject:
   - component: {fileID: 4617355042445406440}
   - component: {fileID: 1133211024751393437}
   - component: {fileID: 2308565361275725158}
-  m_Layer: 7
-  m_Name: Unit
-  m_TagString: Player
+  - component: {fileID: 1831910930920326255}
+  m_Layer: 8
+  m_Name: Enemy
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -451,7 +452,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2554461699235619137}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36c0012c5ffabc04ba94eb0c1d462823, type: 3}
   m_Name: 
@@ -540,6 +541,19 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 10
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1831910930920326255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0383ba660d1f04748839046992b5bebe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimplePatrol
+  speed: 0.2
 --- !u!1 &3543903029476029741
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,8 +566,8 @@ GameObject:
   - component: {fileID: 1272383768257463630}
   - component: {fileID: 3891806960164601796}
   - component: {fileID: 5883996746545567571}
-  m_Layer: 0
-  m_Name: PlayerUnitIndicator
+  m_Layer: 8
+  m_Name: EnemyUnitIndicator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -607,7 +621,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f96b352e2e2267247869750d440d464e, type: 2}
+  - {fileID: 2100000, guid: b336dad33e02b0d46bcc0b3dce500733, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -662,7 +676,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 103324679047294720}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Handle Slide Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -700,7 +714,7 @@ GameObject:
   - component: {fileID: 8792031172332357478}
   - component: {fileID: 5171297608106435101}
   - component: {fileID: 8784778533646620388}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -775,7 +789,7 @@ GameObject:
   - component: {fileID: 2542864473839769178}
   - component: {fileID: 1818725563374458422}
   - component: {fileID: 9217938628954285881}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -848,7 +862,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1906834308457255403}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}

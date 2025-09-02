@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 157043f18660efe4e9871296b3eb49c1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - commandPreviewPrefab: {instanceID: 0}
+  - defaultCursor: {instanceID: 0}
+  - moveCursor: {instanceID: 0}
+  - attackCursor: {fileID: 2800000, guid: 5c159cba59a443a40891d9e3d928f85e, type: 3}
+  - patrolCursor: {instanceID: 0}
+  - guardCursor: {fileID: 2800000, guid: 3ed8df65143a2f8419ecc9c8ba18dad1, type: 3}
+  - invalidCursor: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
