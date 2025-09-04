@@ -22,6 +22,12 @@ public class HealthTracker : MonoBehaviour
 
     private void Start()
     {
+        if (HealthBarSlider != null)
+        {
+            HealthBarSlider.interactable = false;   // Prevent player interaction
+            HealthBarSlider.transition = Selectable.Transition.None; // Remove highlight animations
+        }
+
         // Auto-find references if not assigned
         if (HealthBarSlider == null)
             HealthBarSlider = GetComponentInChildren<Slider>();

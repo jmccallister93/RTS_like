@@ -113,12 +113,11 @@ public class AttackController : MonoBehaviour
             }
 
             // Check if target is too far (in case OnTriggerExit didn't fire)
-            float distance = Vector3.Distance(transform.position, targetToAttack.position);
-            if (distance > detectionRange * 1.2f)
+            if (targetToAttack != null)
             {
-                if (showDebugLogs)
-                    Debug.Log($"{gameObject.name} target {targetToAttack.name} too far ({distance:F2}), clearing target");
-                targetToAttack = null;
+                float distance = Vector3.Distance(transform.position, targetToAttack.position);
+
+              
             }
 
         }

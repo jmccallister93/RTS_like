@@ -60,21 +60,24 @@ public class UnitSelectionManager : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, raycastDistance, clickable))
             {
-                if (Keyboard.current.leftShiftKey.isPressed)
+                GameObject clickedObj = hit.collider.gameObject;
+                if (clickedObj.GetComponent<Unit>() != null)
                 {
-                    MultiSelect(hit.collider.gameObject);
+                    if (Keyboard.current.leftShiftKey.isPressed)
+                        MultiSelect(clickedObj);
+                    else
+                        SelectByClicking(clickedObj);
                 }
                 else
                 {
-                    SelectByClicking(hit.collider.gameObject);
+                    if (!Keyboard.current.leftShiftKey.isPressed)
+                        DeselectAll();
                 }
             }
             else
             {
                 if (!Keyboard.current.leftShiftKey.isPressed)
-                {
                     DeselectAll();
-                }
             }
         }
 

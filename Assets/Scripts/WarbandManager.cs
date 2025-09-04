@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -62,10 +62,10 @@ public class WarbandManager : MonoBehaviour
         }
 
         // Auto-assign units if not manually assigned
-        if (warbandUnits.Count == 0)
-        {
-            AutoAssignUnits();
-        }
+        //if (warbandUnits.Count == 0)
+        //{
+        //    AutoAssignUnits();
+        //}
 
         // Initialize button states
         UpdateButtonStates();
@@ -73,9 +73,21 @@ public class WarbandManager : MonoBehaviour
 
     void Update()
     {
-        if (mouse.leftButton.wasPressedThisFrame && EventSystem.current.IsPointerOverGameObject())
+        if (mouse.leftButton.wasPressedThisFrame)
         {
-            return;
+            // Check if the EventSystem has an actively selected UI element
+            GameObject selectedUI = EventSystem.current.currentSelectedGameObject;
+
+            if (selectedUI != null)
+            {
+                // A UI element was clicked → ignore world logic
+                // ✅ Buttons will still fire because we didn’t cancel Update
+            }
+            else
+            {
+                // No UI element selected → handle world click
+                HandleWorldClick();
+            }
         }
 
         // Handle camera following
@@ -88,28 +100,39 @@ public class WarbandManager : MonoBehaviour
         UpdateButtonStates();
     }
 
+
+    private void HandleWorldClick()
+    {
+        Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            // Example: hook into your UnitSelectionManager
+            Debug.Log("Clicked world object: " + hit.collider.name);
+        }
+    }
+
     /// <summary>
     /// Automatically assigns units from UnitSelectionManager's allUnitsList
     /// </summary>
-    private void AutoAssignUnits()
-    {
-        if (UnitSelectionManager.Instance != null && UnitSelectionManager.Instance.allUnitsList.Count > 0)
-        {
-            warbandUnits.Clear();
+    //private void AutoAssignUnits()
+    //{
+    //    if (UnitSelectionManager.Instance != null && UnitSelectionManager.Instance.allUnitsList.Count > 0)
+    //    {
+    //        warbandUnits.Clear();
 
-            // Take up to 7 units (matching the number of buttons)
-            int maxUnits = Mathf.Min(UnitSelectionManager.Instance.allUnitsList.Count, warbandButtons.Count);
+    //        // Take up to 7 units (matching the number of buttons)
+    //        int maxUnits = Mathf.Min(UnitSelectionManager.Instance.allUnitsList.Count, warbandButtons.Count);
 
-            for (int i = 0; i < maxUnits; i++)
-            {
-                GameObject unit = UnitSelectionManager.Instance.allUnitsList[i];
-                if (unit != null && unit.CompareTag("Player")) // Only assign player units
-                {
-                    warbandUnits.Add(unit);
-                }
-            }
-        }
-    }
+    //        for (int i = 0; i < maxUnits; i++)
+    //        {
+    //            GameObject unit = UnitSelectionManager.Instance.allUnitsList[i];
+    //            if (unit != null && unit.CompareTag("Player")) // Only assign player units
+    //            {
+    //                warbandUnits.Add(unit);
+    //            }
+    //        }
+    //    }
+    //}
 
     /// <summary>
     /// Manually assign a unit to a specific warband slot
@@ -145,6 +168,8 @@ public class WarbandManager : MonoBehaviour
 
                 // Select the unit in UnitSelectionManager
                 SelectWarbandMember(selectedUnit);
+
+                UpdateButtonStates();
             }
         }
     }
@@ -323,12 +348,16 @@ public class WarbandManager : MonoBehaviour
                 // Apply the color to the button
                 ColorBlock colors = warbandButtons[i].colors;
                 colors.normalColor = buttonColor;
+                colors.selectedColor = buttonColor; // ✅ add this
                 colors.highlightedColor = buttonColor * 1.2f;
                 colors.pressedColor = buttonColor * 0.8f;
                 warbandButtons[i].colors = colors;
+
             }
         }
     }
+
+
 
     /// <summary>
     /// Checks if a warband member is alive
@@ -354,7 +383,7 @@ public class WarbandManager : MonoBehaviour
     /// </summary>
     public void RefreshWarbandList()
     {
-        AutoAssignUnits();
+        //AutoAssignUnits();
         UpdateButtonStates();
     }
 

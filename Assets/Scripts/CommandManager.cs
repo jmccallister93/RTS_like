@@ -57,6 +57,8 @@ public class CommandManager : MonoBehaviour
 
     void Update()
     {
+
+
         // Don't process if clicking on UI
         if (mouse.leftButton.wasPressedThisFrame && EventSystem.current.IsPointerOverGameObject())
         {
@@ -88,6 +90,9 @@ public class CommandManager : MonoBehaviour
                 // Check for enemy click first (using attackable layer)
                 if (Physics.Raycast(ray, out hit, 100f, UnitSelectionManager.Instance.attackable))
                 {
+                    Debug.Log($"Raycast hit {hit.collider.gameObject.name} on layer {hit.collider.gameObject.layer}");
+
+
                     GameObject clickedObject = hit.collider.gameObject;
 
                     // Check if it's a valid enemy
