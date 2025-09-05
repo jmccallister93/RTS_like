@@ -62,10 +62,10 @@ public class WarbandManager : MonoBehaviour, IRunWhenPaused
         }
 
         // Auto-assign units if not manually assigned
-        //if (warbandUnits.Count == 0)
-        //{
-        //    AutoAssignUnits();
-        //}
+        if (warbandUnits.Count == 0)
+        {
+            AutoAssignUnits();
+        }
 
         // Initialize button states
         UpdateButtonStates();
@@ -114,25 +114,40 @@ public class WarbandManager : MonoBehaviour, IRunWhenPaused
     /// <summary>
     /// Automatically assigns units from UnitSelectionManager's allUnitsList
     /// </summary>
-    //private void AutoAssignUnits()
-    //{
-    //    if (UnitSelectionManager.Instance != null && UnitSelectionManager.Instance.allUnitsList.Count > 0)
-    //    {
-    //        warbandUnits.Clear();
+    private void AutoAssignUnits()
+    {
+        // Find all GameObjects with "Player" tag in the scene
+        GameObject[] playerUnits = GameObject.FindGameObjectsWithTag("Player");
 
-    //        // Take up to 7 units (matching the number of buttons)
-    //        int maxUnits = Mathf.Min(UnitSelectionManager.Instance.allUnitsList.Count, warbandButtons.Count);
+        // Clear existing warband units
+        warbandUnits.Clear();
 
-    //        for (int i = 0; i < maxUnits; i++)
-    //        {
-    //            GameObject unit = UnitSelectionManager.Instance.allUnitsList[i];
-    //            if (unit != null && unit.CompareTag("Player")) // Only assign player units
-    //            {
-    //                warbandUnits.Add(unit);
-    //            }
-    //        }
-    //    }
-    //}
+        // Take up to 7 units (matching the number of buttons)
+        int maxUnits = Mathf.Min(playerUnits.Length, warbandButtons.Count);
+
+        for (int i = 0; i < maxUnits; i++)
+        {
+            GameObject unit = playerUnits[i];
+            if (unit != null)
+            {
+                warbandUnits.Add(unit);
+            }
+        }
+
+        // Fill remaining slots with null if we have fewer than 7 units
+        while (warbandUnits.Count < warbandButtons.Count)
+        {
+            warbandUnits.Add(null);
+        }
+
+        Debug.Log($"Auto-assigned {maxUnits} player units to warband slots");
+    }
+
+    public void AutoAssignPlayerUnits()
+    {
+        AutoAssignUnits();
+        UpdateButtonStates();
+    }
 
     /// <summary>
     /// Manually assign a unit to a specific warband slot

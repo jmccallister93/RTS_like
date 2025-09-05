@@ -1250,10 +1250,7 @@ MonoBehaviour:
   warbandMember5Button: {fileID: 1912377611}
   warbandMember6Button: {fileID: 866381092}
   warbandMember7Button: {fileID: 1059217500}
-  warbandUnits:
-  - {fileID: 1270065720}
-  - {fileID: 1599996634}
-  - {fileID: 894787730}
+  warbandUnits: []
   cam: {fileID: 963194227}
   cameraFollowSpeed: 5
   cameraOffset: {x: 0, y: 10, z: -8}
@@ -3093,6 +3090,92 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 858868470}
   m_CullTransparentMesh: 1
+--- !u!1 &865453919
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 865453921}
+  - component: {fileID: 865453920}
+  m_Layer: 0
+  m_Name: AbilityManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &865453920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 865453919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5c37929226f3064ea756d5ff697ac1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityManager
+  abilityCanvas: {fileID: 1285341388}
+  hotbarPanel: {fileID: 1400450417}
+  abilityButtons:
+  - {fileID: 1047963197}
+  - {fileID: 1913419519}
+  - {fileID: 1304679631}
+  - {fileID: 1317252468}
+  - {fileID: 311915615}
+  - {fileID: 265116774}
+  abilityIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cooldownOverlays:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cooldownTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 65
+  previewMaterial: {fileID: 2100000, guid: a3fa570969154ae49a08ce09a2a5923b, type: 2}
+  areaPreviewPrefab: {fileID: 0}
+  pathPreviewPrefab: {fileID: 0}
+  readyColor: {r: 1, g: 1, b: 1, a: 1}
+  cooldownColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  castingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  disabledColor: {r: 1, g: 0, b: 0, a: 1}
+  hotkeys: 310000003200000033000000340000003500000036000000
+  showTooltips: 1
+--- !u!4 &865453921
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 865453919}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 2.74997, y: -0.81, z: -1.6768799}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1270065730}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &866381090
 GameObject:
   m_ObjectHideFlags: 0
@@ -3293,11 +3376,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &894787730 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
-  m_PrefabInstance: {fileID: 902921245}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &902921245
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3966,9 +4044,9 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1180188982}
   m_CullTransparentMesh: 1
---- !u!1 &1270065720 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+--- !u!4 &1270065730 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
   m_PrefabInstance: {fileID: 2678732522778468128}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1271248625
@@ -4229,14 +4307,48 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5c37929226f3064ea756d5ff697ac1e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbilityManager
-  ability1Button: {fileID: 1047963197}
-  ability2Button: {fileID: 1913419519}
-  ability3Button: {fileID: 1304679631}
-  ability4Button: {fileID: 1317252468}
-  ability5Button: {fileID: 311915615}
-  ability6Button: {fileID: 265116774}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  abilityCanvas: {fileID: 0}
+  hotbarPanel: {fileID: 0}
+  abilityButtons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  abilityIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cooldownOverlays:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cooldownTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  previewMaterial: {fileID: 0}
+  areaPreviewPrefab: {fileID: 0}
+  pathPreviewPrefab: {fileID: 0}
+  readyColor: {r: 1, g: 1, b: 1, a: 1}
+  cooldownColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  castingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  disabledColor: {r: 1, g: 0, b: 0, a: 1}
+  hotkeys: 310000003200000033000000340000003500000036000000
+  showTooltips: 1
 --- !u!1 &1304679629
 GameObject:
   m_ObjectHideFlags: 0
@@ -5051,11 +5163,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1567627853}
   m_CullTransparentMesh: 1
---- !u!1 &1599996634 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
-  m_PrefabInstance: {fileID: 189458408}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1683599669
 GameObject:
   m_ObjectHideFlags: 0
@@ -6531,7 +6638,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 865453921}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
 --- !u!1660057539 &9223372036854775807

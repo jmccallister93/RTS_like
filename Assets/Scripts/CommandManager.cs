@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -33,11 +34,14 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
 
     private CommandType currentCommand = CommandType.Move;
     private Mouse mouse;
+    private Keyboard keyboard;
 
     void Start()
     {
         // Initialize mouse reference
         mouse = Mouse.current;
+        keyboard = Keyboard.current;
+        OnGUI();
 
         // Set up button listeners
         moveButton.onClick.AddListener(() => SelectCommand(CommandType.Move));
@@ -55,6 +59,9 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
 
     void Update()
     {
+
+        // Handle hotkey input first
+        HandleHotkeyInput();
         // Don't process if clicking on UI
         if (mouse.leftButton.wasPressedThisFrame && EventSystem.current.IsPointerOverGameObject())
         {
@@ -128,6 +135,63 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
             }
 
             SelectCommand(CommandType.Move);
+        }
+    }
+
+    void HandleHotkeyInput()
+    {
+        // Only process hotkeys if we're not typing in a text field
+        if (EventSystem.current.currentSelectedGameObject != null)
+        {
+            var inputField = EventSystem.current.currentSelectedGameObject.GetComponent<InputField>();
+            if (inputField != null)
+            {
+                return; // Don't process hotkeys while typing
+            }
+        }
+
+        // Command hotkeys
+        if (keyboard.zKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.Move);
+        }
+        else if (keyboard.xKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.Guard);
+        }
+        else if (keyboard.cKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.AttackMove);
+        }
+        else if (keyboard.vKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.Patrol);
+        }
+        else if (keyboard.fKey.wasPressedThisFrame)
+        {
+            ExecuteStopCommand();
+        }
+
+        // Alternative: Use H for Hold Position (same as stop)
+        else if (keyboard.hKey.wasPressedThisFrame)
+        {
+            ExecuteStopCommand();
+        }
+    }
+    void OnGUI()
+    {
+        // Only show during development or if you want persistent hotkey display
+        if (Application.isEditor )
+        {
+            GUILayout.BeginArea(new Rect(10, 10, 200, 150));
+            GUILayout.Label("Hotkeys:");
+            GUILayout.Label("M - Move");
+            GUILayout.Label("G - Guard");
+            GUILayout.Label("A - Attack Move");
+            GUILayout.Label("P - Patrol");
+            GUILayout.Label("S - Stop");
+            GUILayout.Label("H - Hold Position");
+            GUILayout.EndArea();
         }
     }
 
