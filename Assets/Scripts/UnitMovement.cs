@@ -12,19 +12,21 @@ public enum MovementMode
 
 public class UnitMovement : MonoBehaviour, IPausable
 {
+
     [Header("Movement Settings")]
     public LayerMask ground = 1;
     public float raycastDistance = 100f;
+
     private NavMeshAgent agent;
     public bool isCommandedtoMove;
     public MovementMode currentMode = MovementMode.None;
 
-    // Pause-related fields
+    // Pause snapshot
     private bool wasPausedWhileMoving;
     private Vector3 pausedDestination;
     private MovementMode pausedMode;
 
-    // Add patrol-specific fields
+    // Patrol
     private Vector3 patrolStartPoint;
     private Vector3 patrolEndPoint;
     private bool movingToEndPoint = true;
@@ -32,42 +34,29 @@ public class UnitMovement : MonoBehaviour, IPausable
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-
-        // Register with pause manager
-        if (PauseManager.Instance != null)
-        {
-            PauseManager.Instance.RegisterPausable(this);
-        }
+        //PauseManager.Instance?.RegisterPausable(this); // optional helper
     }
 
-    private void OnDestroy()
-    {
-        // Unregister from pause manager
-        if (PauseManager.Instance != null)
-        {
-            PauseManager.Instance.UnregisterPausable(this);
-        }
-    }
+    //private void OnDestroy()
+    //{
+    //    // Unregister from pause manager
+    //    if (PauseManager.Instance != null)
+    //    {
+    //        PauseManager.Instance.UnregisterPausable(this);
+    //    }
+    //}
 
     private void Update()
     {
-        // Don't update movement if paused
-        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-            return;
-
-        // Only handle movement completion checking
         if (isCommandedtoMove && agent != null)
         {
             if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance)
             {
-                // Special handling for patrol mode
                 if (currentMode == MovementMode.Patrol)
                 {
-                    // Switch patrol direction
                     movingToEndPoint = !movingToEndPoint;
-                    Vector3 nextPoint = movingToEndPoint ? patrolEndPoint : patrolStartPoint;
-                    agent.SetDestination(nextPoint);
-                    // Keep patrol mode active
+                    Vector3 next = movingToEndPoint ? patrolEndPoint : patrolStartPoint;
+                    agent.SetDestination(next);
                 }
                 else
                 {
@@ -83,7 +72,7 @@ public class UnitMovement : MonoBehaviour, IPausable
         if (isCommandedtoMove && agent != null)
         {
             wasPausedWhileMoving = true;
-            pausedDestination = agent.destination;
+            pausedDestination = agent.hasPath ? agent.destination : transform.position;
             pausedMode = currentMode;
         }
         else
@@ -94,14 +83,15 @@ public class UnitMovement : MonoBehaviour, IPausable
 
     public void OnResume()
     {
-        // NavMeshAgent resume is handled by PauseManager
-        // Just restore our internal state if needed
         if (wasPausedWhileMoving)
         {
-            // The PauseManager will restore the NavMeshAgent destination
-            // We just need to restore our internal flags
-            isCommandedtoMove = true;
-            currentMode = pausedMode;
+            // Only restore if no queued commands will override
+            if (!CommandQueue.Instance.HasQueuedCommandFor(gameObject))
+            {
+                isCommandedtoMove = true;
+                currentMode = pausedMode;
+            }
+
             wasPausedWhileMoving = false;
         }
     }
@@ -109,24 +99,24 @@ public class UnitMovement : MonoBehaviour, IPausable
     // Public methods for other scripts to call
     public void MoveToPosition(Vector3 targetPosition, MovementMode mode = MovementMode.Move)
     {
-        if (agent != null)
+        if (agent == null) return;
+
+        if (NavMesh.SamplePosition(targetPosition, out var navHit, 2f, NavMesh.AllAreas))
         {
-            // Check if the target is on NavMesh
-            NavMeshHit navHit;
-            if (NavMesh.SamplePosition(targetPosition, out navHit, 2f, NavMesh.AllAreas))
-            {
-                isCommandedtoMove = true;
-                currentMode = mode;
-                agent.SetDestination(navHit.position);
-            }
+            // New order overrides current
+            agent.ResetPath();
+            isCommandedtoMove = true;
+            currentMode = mode;
+            agent.isStopped = false;
+            agent.SetDestination(navHit.position);
         }
     }
 
     // Update the PatrolTo method
     public void StartPatrol(Vector3 patrolPoint)
     {
-        patrolStartPoint = transform.position; // Current position
-        patrolEndPoint = patrolPoint;          // Clicked position
+        patrolStartPoint = transform.position;
+        patrolEndPoint = patrolPoint;
         movingToEndPoint = true;
         MoveToPosition(patrolEndPoint, MovementMode.Patrol);
     }

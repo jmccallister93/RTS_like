@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 // Command Queue System for handling commands during pause
@@ -47,11 +48,17 @@ public class CommandQueue : MonoBehaviour
     {
         return queuedCommands.Count;
     }
+
+    public bool HasQueuedCommandFor(GameObject unit)
+    {
+        return queuedCommands.Any(cmd => cmd.TargetUnit == unit);
+    }
 }
 
 // Command interface and implementations
 public interface ICommand
 {
+    GameObject TargetUnit { get; }
     void Execute();
 }
 
@@ -65,7 +72,7 @@ public class MoveCommand : ICommand
         this.unit = unit;
         this.targetPosition = targetPosition;
     }
-
+    public GameObject TargetUnit => unit;
     public void Execute()
     {
         if (unit != null)
@@ -90,6 +97,7 @@ public class AttackMoveCommand : ICommand
         this.targetPosition = targetPosition;
     }
 
+    public GameObject TargetUnit => unit;
     public void Execute()
     {
         if (unit != null)
@@ -115,7 +123,7 @@ public class GuardCommand : ICommand
         this.guardPosition = guardPosition;
         this.radius = radius;
     }
-
+    public GameObject TargetUnit => unit;
     public void Execute()
     {
         if (unit != null)
@@ -139,7 +147,7 @@ public class PatrolCommand : ICommand
         this.unit = unit;
         this.patrolPoint = patrolPoint;
     }
-
+    public GameObject TargetUnit => unit;
     public void Execute()
     {
         if (unit != null)
@@ -163,7 +171,7 @@ public class AttackTargetCommand : ICommand
         this.unit = unit;
         this.target = target;
     }
-
+    public GameObject TargetUnit => unit;
     public void Execute()
     {
         if (unit != null && target != null)
@@ -185,7 +193,7 @@ public class StopCommand : ICommand
     {
         this.unit = unit;
     }
-
+    public GameObject TargetUnit => unit;
     public void Execute()
     {
         if (unit != null)

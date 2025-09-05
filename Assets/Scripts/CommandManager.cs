@@ -12,7 +12,7 @@ public enum CommandType
     Patrol,
 }
 
-public class CommandManager : MonoBehaviour
+public class CommandManager : MonoBehaviour, IRunWhenPaused
 {
     [Header("UI References")]
     public Button moveButton;

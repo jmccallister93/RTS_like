@@ -28,34 +28,28 @@ public class AttackController : MonoBehaviour, IPausable
 
     private void Start()
     {
-        // Make sure we have a sphere collider for detection
-        SphereCollider detectionCollider = GetComponent<SphereCollider>();
+        var detectionCollider = GetComponent<SphereCollider>();
         if (detectionCollider != null && detectionCollider.isTrigger)
         {
             detectionRange = detectionCollider.radius;
-            if (showDebugLogs)
-                Debug.Log($"{gameObject.name} detection range: {detectionRange}");
+            if (showDebugLogs) Debug.Log($"{name} detection range: {detectionRange}");
         }
         else
         {
-            Debug.LogWarning($"{gameObject.name} missing trigger SphereCollider for enemy detection!");
+            Debug.LogWarning($"{name} missing trigger SphereCollider for enemy detection!");
         }
 
-        // Register with pause manager
-        if (PauseManager.Instance != null)
-        {
-            PauseManager.Instance.RegisterPausable(this);
-        }
+        //PauseManager.Instance?.RegisterPausable(this); // optional if you keep these helpers; not required with centralized scan
     }
 
-    private void OnDestroy()
-    {
-        // Unregister from pause manager
-        if (PauseManager.Instance != null)
-        {
-            PauseManager.Instance.UnregisterPausable(this);
-        }
-    }
+    //private void OnDestroy()
+    //{
+    //    // Unregister from pause manager
+    //    if (PauseManager.Instance != null)
+    //    {
+    //        PauseManager.Instance.UnregisterPausable(this);
+    //    }
+    //}
 
     public void OnPause()
     {
@@ -65,76 +59,45 @@ public class AttackController : MonoBehaviour, IPausable
 
     public void OnResume()
     {
-        // Restore target if it still exists and is valid
         if (hadTargetWhenPaused && pausedTarget != null)
         {
-            // Verify target is still alive and valid
-            Unit targetUnit = pausedTarget.GetComponent<Unit>();
-            if (targetUnit != null && targetUnit.IsAlive())
-            {
-                targetToAttack = pausedTarget;
-            }
-            else
-            {
-                targetToAttack = null;
-            }
+            var unit = pausedTarget.GetComponent<Unit>();
+            targetToAttack = (unit != null && unit.IsAlive()) ? pausedTarget : null;
         }
-
         hadTargetWhenPaused = false;
         pausedTarget = null;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Don't process triggers while paused
-        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-            return;
+        if (showDebugLogs) Debug.Log($"{name} detected {other.name} entering trigger");
 
-        if (showDebugLogs)
-            Debug.Log($"{gameObject.name} detected {other.name} entering trigger");
-
-        // Check if we're in pure Move mode
-        UnitMovement movement = GetComponent<UnitMovement>();
-        if (movement != null && movement.isCommandedtoMove &&
-            movement.currentMode == MovementMode.Move)
-        {
-            // Ignore enemies during pure movement
+        // Ignore while in pure Move mode
+        var movement = GetComponent<UnitMovement>();
+        if (movement != null && movement.isCommandedtoMove && movement.currentMode == MovementMode.Move)
             return;
-        }
 
         if (isGuarding)
         {
-            float distanceFromGuardPoint = Vector3.Distance(other.transform.position, guardPosition);
-            if (distanceFromGuardPoint > guardRadius)
-            {
-                return; // Ignore enemies outside guard area
-            }
+            float d = Vector3.Distance(other.transform.position, guardPosition);
+            if (d > guardRadius) return;
         }
 
-        // Only auto-target if we don't already have a target
         if (targetToAttack == null && ShouldAutoTarget(other.gameObject))
         {
             targetToAttack = other.transform;
-            if (showDebugLogs)
-                Debug.Log($"{gameObject.name} auto-targeting {other.name}");
+            if (showDebugLogs) Debug.Log($"{name} auto-targeting {other.name}");
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        // Don't process triggers while paused
-        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-            return;
-
-        // Only clear target if it's the one leaving
         if (targetToAttack != null && other.transform == targetToAttack)
         {
-            // Check distance to make sure they're really out of range
             float distance = Vector3.Distance(transform.position, other.transform.position);
-            if (distance > detectionRange * 1.1f) // Small buffer to prevent flickering
+            if (distance > detectionRange * 1.1f)
             {
-                if (showDebugLogs)
-                    Debug.Log($"{gameObject.name} lost target {other.name} (distance: {distance:F2})");
+                if (showDebugLogs) Debug.Log($"{name} lost target {other.name} (distance: {distance:F2})");
                 targetToAttack = null;
             }
         }
@@ -143,49 +106,23 @@ public class AttackController : MonoBehaviour, IPausable
     // Update method to handle lost targets that might have been destroyed
     private void Update()
     {
-        // Don't update while paused
-        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-            return;
-
-        // Check if our target is still valid
         if (targetToAttack != null)
         {
-            // Check if target was destroyed
-            if (targetToAttack == null)
+            var unit = targetToAttack.GetComponent<Unit>();
+            if (unit != null && !unit.IsAlive())
             {
-                if (showDebugLogs)
-                    Debug.Log($"{gameObject.name} target was destroyed");
-                return;
-            }
-
-            // Check if target is still alive
-            Unit targetUnit = targetToAttack.GetComponent<Unit>();
-            if (targetUnit != null && !targetUnit.IsAlive())
-            {
-                if (showDebugLogs)
-                    Debug.Log($"{gameObject.name} target {targetToAttack.name} died, clearing target");
+                if (showDebugLogs) Debug.Log($"{name} target {targetToAttack.name} died, clearing target");
                 targetToAttack = null;
                 return;
-            }
-
-            // Check if target is too far (in case OnTriggerExit didn't fire)
-            if (targetToAttack != null)
-            {
-                float distance = Vector3.Distance(transform.position, targetToAttack.position);
-                // You can add distance checking logic here if needed
             }
         }
 
-        // If guarding, check if target is leaving guard area
         if (isGuarding && targetToAttack != null)
         {
-            float distanceFromGuardPoint = Vector3.Distance(targetToAttack.position, guardPosition);
-            if (distanceFromGuardPoint > guardRadius)
+            float d = Vector3.Distance(targetToAttack.position, guardPosition);
+            if (d > guardRadius)
             {
-                // Target left guard area, stop pursuing
                 targetToAttack = null;
-
-                // Return to guard position
                 GetComponent<UnitMovement>()?.MoveToPosition(guardPosition, MovementMode.Guard);
             }
         }
@@ -196,101 +133,61 @@ public class AttackController : MonoBehaviour, IPausable
         isGuarding = true;
         guardPosition = position;
         guardRadius = radius;
-
-        // Move to guard position
         GetComponent<UnitMovement>()?.MoveToPosition(position, MovementMode.Guard);
     }
 
-    public void ClearGuardPosition()
-    {
-        isGuarding = false;
-    }
+    public void ClearGuardPosition() => isGuarding = false;
 
-    /// <summary>
-    /// Determines if we should automatically target this unit
-    /// </summary>
     private bool ShouldAutoTarget(GameObject potentialTarget)
     {
-        // Don't target ourselves
-        if (potentialTarget == this.gameObject)
-            return false;
+        if (potentialTarget == gameObject) return false;
 
-        // Must have a Unit component
-        Unit targetUnit = potentialTarget.GetComponent<Unit>();
-        if (targetUnit == null || !targetUnit.IsAlive())
-            return false;
+        var unit = potentialTarget.GetComponent<Unit>();
+        if (unit == null || !unit.IsAlive()) return false;
 
-        // Check team affiliation
-        string myTag = this.gameObject.tag;
-        string targetTag = potentialTarget.tag;
+        string myTag = tag;
+        string theirTag = potentialTarget.tag;
 
-        if (showDebugLogs)
-            Debug.Log($"{gameObject.name} ({myTag}) checking target {potentialTarget.name} ({targetTag})");
+        if (showDebugLogs) Debug.Log($"{name} ({myTag}) checking target {potentialTarget.name} ({theirTag})");
 
-        // Player units should target Enemy units
-        if (myTag == "Player" && targetTag == "Enemy")
-            return true;
-
-        // Enemy units should target Player units
-        if (myTag == "Enemy" && targetTag == "Player")
-            return true;
-
-        return false; // Same team or untagged - don't auto-target
+        if (myTag == "Player" && theirTag == "Enemy") return true;
+        if (myTag == "Enemy" && theirTag == "Player") return true;
+        return false;
     }
 
-    /// <summary>
-    /// Manually set a target (called by UnitSelectionManager on right-click)
-    /// </summary>
     public void SetTarget(Transform newTarget)
     {
-        // Clear guard mode when manually targeting
         ClearGuardPosition();
 
         if (newTarget != null && ShouldAutoTarget(newTarget.gameObject))
         {
             targetToAttack = newTarget;
+            GetComponent<UnitMovement>()?.StopMovement();
 
-            // Clear any current movement commands and set the unit to follow the target
-            UnitMovement movement = GetComponent<UnitMovement>();
-            if (movement != null)
-            {
-                movement.StopMovement();
-            }
+            var animator = GetComponent<Animator>();
+            if (animator) animator.SetBool("isFollowing", true);
 
-            // Trigger the animator to start following
-            Animator animator = GetComponent<Animator>();
-            if (animator != null)
-            {
-                animator.SetBool("isFollowing", true);
-            }
-
-            if (showDebugLogs)
-                Debug.Log($"{gameObject.name} manually targeting {newTarget.name}");
+            if (showDebugLogs) Debug.Log($"{name} manually targeting {newTarget.name}");
         }
     }
 
-    /// <summary>
-    /// Called by the attack state to deal damage
-    /// </summary>
     public void DealDamage(Transform target)
     {
         if (target == null)
         {
-            if (showDebugLogs)
-                Debug.Log($"{gameObject.name} tried to attack null target");
+            if (showDebugLogs) Debug.Log($"{name} tried to attack null target");
             return;
         }
 
-        Unit targetUnit = target.GetComponent<Unit>();
-        if (targetUnit != null && targetUnit.IsAlive())
+        var u = target.GetComponent<Unit>();
+        if (u != null && u.IsAlive())
         {
-            targetUnit.TakeDamage(attackDamage);
-            if (showDebugLogs)
-                Debug.Log($"{gameObject.name} dealt {attackDamage} damage to {target.name}");
+            u.TakeDamage(attackDamage);
+            if (showDebugLogs) Debug.Log($"{name} dealt {attackDamage} to {target.name}");
         }
         else if (showDebugLogs)
         {
-            Debug.Log($"{gameObject.name} tried to attack {target.name} but target is dead or not a unit");
+            Debug.Log($"{name} tried to attack {target.name} but target is dead or not a unit");
         }
     }
 

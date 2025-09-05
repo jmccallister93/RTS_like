@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public class WarbandManager : MonoBehaviour
+public class WarbandManager : MonoBehaviour, IRunWhenPaused
 {
     [Header("UI References")]
     public Button warbandMember1Button;

@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
@@ -13,22 +14,19 @@ public class PauseManager : MonoBehaviour
     public Key pauseKey = Key.Space;
 
     [Header("UI")]
-    public GameObject pauseUI; // Assign your pause menu UI here
+    public GameObject pauseUI;
 
-    // Events for other systems to subscribe to
     public static event Action OnGamePaused;
     public static event Action OnGameResumed;
 
-    // Lists to track pausable objects
-    private List<IPausable> pausableComponents = new List<IPausable>();
-    private List<NavMeshAgent> pausedAgents = new List<NavMeshAgent>();
-    private List<Animator> pausedAnimators = new List<Animator>();
+    // Track what we disable so we can re-enable only those
+    private readonly List<Behaviour> disabledBehaviours = new();
+    private readonly List<NavMeshAgent> pausedAgents = new();
+    private readonly Dictionary<NavMeshAgent, AgentPauseData> agentPauseData = new();
+    private readonly List<Animator> pausedAnimators = new();
+    private readonly Dictionary<Animator, float> animatorSpeeds = new();
 
-    // Store agent states for resume
-    private Dictionary<NavMeshAgent, AgentPauseData> agentPauseData = new Dictionary<NavMeshAgent, AgentPauseData>();
-    private Dictionary<Animator, float> animatorSpeeds = new Dictionary<Animator, float>();
-
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -41,50 +39,34 @@ public class PauseManager : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
-        var keyboard = Keyboard.current;
-        if (keyboard != null && keyboard[pauseKey].wasPressedThisFrame)
+        var k = Keyboard.current;
+        if (k != null && k[pauseKey].wasPressedThisFrame)
         {
-            Debug.Log("Space pressed!");
             TogglePause();
         }
     }
 
     public void TogglePause()
     {
-        if (IsPaused)
-            ResumeGame();
-        else
-            PauseGame();
+        if (IsPaused) ResumeGame();
+        else PauseGame();
     }
 
     public void PauseGame()
     {
         if (IsPaused) return;
-
         IsPaused = true;
         Time.timeScale = 0f;
 
-        // Show pause UI
-        if (pauseUI != null)
-            pauseUI.SetActive(true);
+        if (pauseUI) pauseUI.SetActive(true);
 
-        // Pause all registered pausable components
-        foreach (var pausable in pausableComponents)
-        {
-            pausable.OnPause();
-        }
-
-        // Pause all NavMeshAgents
+        DisablePausables();      // disables + calls OnPause
         PauseAllNavMeshAgents();
-
-        // Pause all Animators
         PauseAllAnimators();
 
-        // Notify other systems
         OnGamePaused?.Invoke();
-
         Debug.Log("Game Paused");
     }
 
@@ -95,52 +77,81 @@ public class PauseManager : MonoBehaviour
         IsPaused = false;
         Time.timeScale = 1f;
 
-        // Hide pause UI
-        if (pauseUI != null)
-            pauseUI.SetActive(false);
-
-        // Execute queued commands first
-        if (CommandQueue.Instance != null)
-        {
-            CommandQueue.Instance.ExecuteQueuedCommands();
-        }
-
-        // Resume all registered pausable components
-        foreach (var pausable in pausableComponents)
-        {
-            pausable.OnResume();
-        }
-
-        // Resume all NavMeshAgents
+        EnablePausables();       // re-enables + calls OnResume
         ResumeAllNavMeshAgents();
-
-        // Resume all Animators
         ResumeAllAnimators();
 
-        // Notify other systems
-        OnGameResumed?.Invoke();
+        CommandQueue.Instance.ExecuteQueuedCommands();  
 
-        Debug.Log("Game Resumed");
+        OnGameResumed?.Invoke();
+        Debug.Log("Game resumed");
+    }
+
+
+    private void DisablePausables()
+    {
+        disabledBehaviours.Clear();
+
+        // Find all active, enabled MonoBehaviours implementing IPausable
+        var pausableBehaviours = FindObjectsOfType<MonoBehaviour>(true)
+            .Where(b => b.isActiveAndEnabled)
+            .Where(b => b is IPausable)
+            .ToList();
+
+        foreach (var mb in pausableBehaviours)
+        {
+            // Skip PauseManager itself
+            if (mb == this) continue;
+
+            // Let them snapshot any state
+            (mb as IPausable)?.OnPause();
+
+            // Keep components that should run during pause (UI, command UI, camera tweeners)
+            if (mb is IRunWhenPaused) continue;
+
+            // Disable gameplay behaviours so their Update/Triggers stop firing
+            mb.enabled = false;
+            disabledBehaviours.Add(mb);
+        }
+    }
+
+    private void EnablePausables()
+    {
+        // Re-enable what we disabled
+        foreach (var b in disabledBehaviours)
+        {
+            if (b != null) b.enabled = true;
+        }
+        disabledBehaviours.Clear();
+
+        // Call OnResume on all IPausable (both re-enabled ones and those that ran during pause)
+        var pausableBehaviours = FindObjectsOfType<MonoBehaviour>(true)
+            .Where(b => b is IPausable)
+            .ToList();
+
+        foreach (var mb in pausableBehaviours)
+        {
+            (mb as IPausable)?.OnResume();
+        }
     }
 
     private void PauseAllNavMeshAgents()
     {
-        NavMeshAgent[] agents = FindObjectsOfType<NavMeshAgent>();
+        pausedAgents.Clear();
+        agentPauseData.Clear();
 
-        foreach (NavMeshAgent agent in agents)
+        foreach (var agent in FindObjectsOfType<NavMeshAgent>())
         {
-            if (agent.enabled && !pausedAgents.Contains(agent))
+            if (agent != null && agent.enabled)
             {
-                // Store agent state
                 agentPauseData[agent] = new AgentPauseData
                 {
-                    destination = agent.destination,
+                    destination = agent.hasPath ? agent.destination : agent.transform.position,
                     hasPath = agent.hasPath,
                     velocity = agent.velocity,
                     isStopped = agent.isStopped
                 };
 
-                // Stop the agent
                 agent.isStopped = true;
                 agent.velocity = Vector3.zero;
                 pausedAgents.Add(agent);
@@ -150,33 +161,29 @@ public class PauseManager : MonoBehaviour
 
     private void ResumeAllNavMeshAgents()
     {
-        foreach (NavMeshAgent agent in pausedAgents)
+        foreach (var agent in pausedAgents)
         {
-            if (agent != null && agentPauseData.ContainsKey(agent))
+            if (agent == null) continue;
+            if (!agentPauseData.TryGetValue(agent, out var data)) continue;
+
+            agent.isStopped = data.isStopped;
+            if (data.hasPath)
             {
-                AgentPauseData data = agentPauseData[agent];
-
-                // Restore agent state
-                agent.isStopped = data.isStopped;
-
-                if (data.hasPath)
-                {
-                    agent.SetDestination(data.destination);
-                }
+                agent.SetDestination(data.destination);
             }
         }
-
         pausedAgents.Clear();
         agentPauseData.Clear();
     }
 
     private void PauseAllAnimators()
     {
-        Animator[] animators = FindObjectsOfType<Animator>();
+        pausedAnimators.Clear();
+        animatorSpeeds.Clear();
 
-        foreach (Animator animator in animators)
+        foreach (var animator in FindObjectsOfType<Animator>())
         {
-            if (animator.enabled && !animatorSpeeds.ContainsKey(animator))
+            if (animator != null && animator.enabled && !animatorSpeeds.ContainsKey(animator))
             {
                 animatorSpeeds[animator] = animator.speed;
                 animator.speed = 0f;
@@ -187,42 +194,20 @@ public class PauseManager : MonoBehaviour
 
     private void ResumeAllAnimators()
     {
-        foreach (Animator animator in pausedAnimators)
+        foreach (var animator in pausedAnimators)
         {
-            if (animator != null && animatorSpeeds.ContainsKey(animator))
+            if (animator == null) continue;
+            if (animatorSpeeds.TryGetValue(animator, out var sp))
             {
-                animator.speed = animatorSpeeds[animator];
+                animator.speed = sp;
             }
         }
-
         pausedAnimators.Clear();
         animatorSpeeds.Clear();
     }
-
-    // Registration methods for pausable components
-    public void RegisterPausable(IPausable pausable)
-    {
-        if (!pausableComponents.Contains(pausable))
-        {
-            pausableComponents.Add(pausable);
-        }
-    }
-
-    public void UnregisterPausable(IPausable pausable)
-    {
-        pausableComponents.Remove(pausable);
-    }
 }
 
-// Interface for pausable components
-public interface IPausable
-{
-    void OnPause();
-    void OnResume();
-}
-
-// Data structure to store NavMeshAgent state
-[System.Serializable]
+[Serializable]
 public class AgentPauseData
 {
     public Vector3 destination;
