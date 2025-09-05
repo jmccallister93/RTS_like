@@ -258,7 +258,7 @@ public class WarbandManager : MonoBehaviour
             cam.transform.position = Vector3.Lerp(startPosition, targetPosition, t);
             cam.transform.rotation = Quaternion.Lerp(startRotation, targetRotation, t);
 
-            elapsedTime += Time.deltaTime;
+            elapsedTime += Time.unscaledDeltaTime;
             yield return null;
         }
 

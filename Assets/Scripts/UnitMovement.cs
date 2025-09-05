@@ -10,15 +10,19 @@ public enum MovementMode
     Patrol
 }
 
-public class UnitMovement : MonoBehaviour
+public class UnitMovement : MonoBehaviour, IPausable
 {
     [Header("Movement Settings")]
     public LayerMask ground = 1;
     public float raycastDistance = 100f;
-
     private NavMeshAgent agent;
     public bool isCommandedtoMove;
     public MovementMode currentMode = MovementMode.None;
+
+    // Pause-related fields
+    private bool wasPausedWhileMoving;
+    private Vector3 pausedDestination;
+    private MovementMode pausedMode;
 
     // Add patrol-specific fields
     private Vector3 patrolStartPoint;
@@ -28,10 +32,29 @@ public class UnitMovement : MonoBehaviour
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+
+        // Register with pause manager
+        if (PauseManager.Instance != null)
+        {
+            PauseManager.Instance.RegisterPausable(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Unregister from pause manager
+        if (PauseManager.Instance != null)
+        {
+            PauseManager.Instance.UnregisterPausable(this);
+        }
     }
 
     private void Update()
     {
+        // Don't update movement if paused
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
         // Only handle movement completion checking
         if (isCommandedtoMove && agent != null)
         {
@@ -52,6 +75,34 @@ public class UnitMovement : MonoBehaviour
                     currentMode = MovementMode.None;
                 }
             }
+        }
+    }
+
+    public void OnPause()
+    {
+        if (isCommandedtoMove && agent != null)
+        {
+            wasPausedWhileMoving = true;
+            pausedDestination = agent.destination;
+            pausedMode = currentMode;
+        }
+        else
+        {
+            wasPausedWhileMoving = false;
+        }
+    }
+
+    public void OnResume()
+    {
+        // NavMeshAgent resume is handled by PauseManager
+        // Just restore our internal state if needed
+        if (wasPausedWhileMoving)
+        {
+            // The PauseManager will restore the NavMeshAgent destination
+            // We just need to restore our internal flags
+            isCommandedtoMove = true;
+            currentMode = pausedMode;
+            wasPausedWhileMoving = false;
         }
     }
 

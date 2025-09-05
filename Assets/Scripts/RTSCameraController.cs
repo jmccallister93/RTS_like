@@ -26,8 +26,8 @@ public class RTSCameraController : MonoBehaviour
     [SerializeField] bool rotationEnabled = true;
 
     [Header("Keyboard Movement")]
-    [SerializeField] float fastSpeed = 0.05f;
-    [SerializeField] float normalSpeed = 0.01f;
+    [SerializeField] float fastSpeed = 0.5f;
+    [SerializeField] float normalSpeed = 0.05f;
    
     float movementSpeed;
 

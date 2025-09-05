@@ -11,11 +11,16 @@ public class UnitAttackState : StateMachineBehaviour
     public float attackCooldown = 1.0f;
     private float lastAttackTime;
 
+    // Pause-related fields
+    private bool wasPausedInThisState = false;
+    private float pausedLastAttackTime;
+
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         attackController = animator.transform.GetComponent<AttackController>();
         agent = animator.transform.GetComponent<NavMeshAgent>();
         unitMovement = animator.transform.GetComponent<UnitMovement>();
+        wasPausedInThisState = false;
 
         if (attackController != null)
         {
@@ -35,6 +40,28 @@ public class UnitAttackState : StateMachineBehaviour
 
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
+        // Check if game is paused - don't process AI logic while paused
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+        {
+            // Store pause state info for resume
+            if (!wasPausedInThisState)
+            {
+                wasPausedInThisState = true;
+                pausedLastAttackTime = lastAttackTime;
+            }
+            return; // Don't process any logic while paused
+        }
+
+        // If we were paused and just resumed, restore timing
+        if (wasPausedInThisState)
+        {
+            wasPausedInThisState = false;
+            // Adjust last attack time to account for paused duration
+            // This prevents immediate attacking after resuming
+            float pauseDuration = Time.time - pausedLastAttackTime;
+            lastAttackTime = Time.time - (pausedLastAttackTime - lastAttackTime);
+        }
+
         // PRIORITY 1: Check if player is commanding movement - override AI
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {
@@ -96,6 +123,7 @@ public class UnitAttackState : StateMachineBehaviour
             agent.isStopped = false;
         }
 
+        wasPausedInThisState = false;
         Debug.Log($"{animator.name} exited Attack state");
     }
 

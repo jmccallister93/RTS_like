@@ -27,20 +27,18 @@ public class CommandManager : MonoBehaviour
 
     [Header("Guard Mode Settings")]
     public float guardAreaRadius = 5f;
-    public Color guardAreaColor = new Color(0, 0.5f, 1f, 0.5f); // Semi-transparent blue
+    public Color guardAreaColor = new Color(0, 0.5f, 1f, 0.5f);
     private GameObject guardAreaIndicator;
     private LineRenderer guardCircleRenderer;
 
     private CommandType currentCommand = CommandType.Move;
     private Mouse mouse;
 
-
-
     void Start()
     {
         // Initialize mouse reference
         mouse = Mouse.current;
-        
+
         // Set up button listeners
         moveButton.onClick.AddListener(() => SelectCommand(CommandType.Move));
         guardButton.onClick.AddListener(() => SelectCommand(CommandType.Guard));
@@ -57,8 +55,6 @@ public class CommandManager : MonoBehaviour
 
     void Update()
     {
-
-
         // Don't process if clicking on UI
         if (mouse.leftButton.wasPressedThisFrame && EventSystem.current.IsPointerOverGameObject())
         {
@@ -68,7 +64,7 @@ public class CommandManager : MonoBehaviour
         List<GameObject> selectedUnits = UnitSelectionManager.Instance?.unitsSelected;
         bool hasSelectedUnits = selectedUnits != null && selectedUnits.Count > 0;
 
-        // Show/hide guard area preview - only if Guard is selected AND units are selected
+        // Show/hide guard area preview - works even when paused
         if (currentCommand == CommandType.Guard && hasSelectedUnits && !mouse.rightButton.isPressed)
         {
             ShowGuardAreaPreview();
@@ -92,21 +88,26 @@ public class CommandManager : MonoBehaviour
                 {
                     Debug.Log($"Raycast hit {hit.collider.gameObject.name} on layer {hit.collider.gameObject.layer}");
 
-
                     GameObject clickedObject = hit.collider.gameObject;
 
                     // Check if it's a valid enemy
                     if (IsValidEnemyTarget(clickedObject, selectedUnits))
                     {
-                        // Direct attack command - make all selected units attack this target
+                        // Create attack commands for each selected unit
                         foreach (GameObject unit in selectedUnits)
                         {
                             if (unit != null)
                             {
-                                AttackController attackController = unit.GetComponent<AttackController>();
-                                if (attackController != null)
+                                var attackCommand = new AttackTargetCommand(unit, hit.transform);
+
+                                // Queue command if paused, execute immediately if not
+                                if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
                                 {
-                                    attackController.SetTarget(hit.transform);
+                                    CommandQueue.Instance.QueueCommand(attackCommand);
+                                }
+                                else
+                                {
+                                    attackCommand.Execute();
                                 }
                             }
                         }
@@ -165,18 +166,16 @@ public class CommandManager : MonoBehaviour
             {
                 if (unitObj != null)
                 {
-                    Unit unit = unitObj.GetComponent<Unit>();
-                    if (unit != null)
-                    {
-                        unit.StopMovement();
+                    var stopCommand = new StopCommand(unitObj);
 
-                        // Also clear any attack targets
-                        AttackController attackController = unitObj.GetComponent<AttackController>();
-                        if (attackController != null)
-                        {
-                            attackController.targetToAttack = null;
-                            attackController.ClearGuardPosition();
-                        }
+                    // Queue command if paused, execute immediately if not
+                    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+                    {
+                        CommandQueue.Instance.QueueCommand(stopCommand);
+                    }
+                    else
+                    {
+                        stopCommand.Execute();
                     }
                 }
             }
@@ -218,7 +217,7 @@ public class CommandManager : MonoBehaviour
 
     void ShowGuardAreaPreview()
     {
-        if (guardAreaIndicator != null )
+        if (guardAreaIndicator != null)
         {
             Vector3 mousePos = GetMouseWorldPosition();
             guardAreaIndicator.transform.position = mousePos;
@@ -284,24 +283,34 @@ public class CommandManager : MonoBehaviour
         {
             if (unitObj != null)
             {
-                Unit unit = unitObj.GetComponent<Unit>();
-                if (unit != null)
-                {
-                    switch (currentCommand)
-                    {
-                        case CommandType.Move:
-                            unit.MoveTo(targetPosition);
-                            break;
-                        case CommandType.Guard:
-                            unit.GuardPosition(targetPosition);
-                            break;
-                        case CommandType.AttackMove:
-                            unit.AttackMoveTo(targetPosition);
-                            break;
-                        case CommandType.Patrol:
-                            unit.PatrolTo(targetPosition);
-                            break;
+                ICommand command = null;
 
+                switch (currentCommand)
+                {
+                    case CommandType.Move:
+                        command = new MoveCommand(unitObj, targetPosition);
+                        break;
+                    case CommandType.Guard:
+                        command = new GuardCommand(unitObj, targetPosition, guardAreaRadius);
+                        break;
+                    case CommandType.AttackMove:
+                        command = new AttackMoveCommand(unitObj, targetPosition);
+                        break;
+                    case CommandType.Patrol:
+                        command = new PatrolCommand(unitObj, targetPosition);
+                        break;
+                }
+
+                if (command != null)
+                {
+                    // Queue command if paused, execute immediately if not
+                    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+                    {
+                        CommandQueue.Instance.QueueCommand(command);
+                    }
+                    else
+                    {
+                        command.Execute();
                     }
                 }
             }
@@ -310,7 +319,6 @@ public class CommandManager : MonoBehaviour
 
     Vector3 GetMouseWorldPosition()
     {
-
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
         RaycastHit hit;
 

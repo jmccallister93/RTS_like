@@ -6,10 +6,8 @@ public class Unit : MonoBehaviour
     [Header("Health Settings")]
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
-
     [Header("UI References")]
     [SerializeField] private HealthTracker healthBar;
-
     private UnitMovement unitMovement;
     private AttackController attackController;
     private GuardAreaDisplay guardAreaDisplay;
@@ -19,18 +17,20 @@ public class Unit : MonoBehaviour
         // Initialize components
         unitMovement = GetComponent<UnitMovement>();
         attackController = GetComponent<AttackController>();
+
         // Initialize health
         currentHealth = maxHealth;
+
         // Find and setup health bar if it exists
         if (healthBar == null)
         {
             healthBar = GetComponentInChildren<HealthTracker>();
         }
-
         if (healthBar != null)
         {
             healthBar.UpdateSliderValue(currentHealth, maxHealth);
         }
+
         //Initialize selection
         if (UnitSelectionManager.Instance != null)
         {
@@ -91,7 +91,6 @@ public class Unit : MonoBehaviour
     public float GetCurrentHealth() => currentHealth;
     public float GetMaxHealth() => maxHealth;
     public bool IsAlive() => currentHealth > 0;
-
 
     public void MoveTo(Vector3 targetPosition)
     {

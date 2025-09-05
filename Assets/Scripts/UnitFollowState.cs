@@ -10,6 +10,11 @@ public class UnitFollowState : StateMachineBehaviour
     private bool hasSetDestination = false;
     private float originalStoppingDistance;
 
+    // Pause-related fields
+    private bool wasPausedInThisState = false;
+    private Vector3 pausedDestination;
+    private bool hadValidTarget = false;
+
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         attackController = animator.transform.GetComponent<AttackController>();
@@ -17,6 +22,7 @@ public class UnitFollowState : StateMachineBehaviour
         agent = animator.transform.GetComponent<NavMeshAgent>();
         unitMovement = animator.transform.GetComponent<UnitMovement>();
         hasSetDestination = false;
+        wasPausedInThisState = false;
 
         originalStoppingDistance = agent.stoppingDistance;
         agent.stoppingDistance = attackingDistance * 0.5f;
@@ -29,6 +35,34 @@ public class UnitFollowState : StateMachineBehaviour
 
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
+        // Check if game is paused - don't process AI logic while paused
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+        {
+            // Store pause state info for resume
+            if (!wasPausedInThisState)
+            {
+                wasPausedInThisState = true;
+                hadValidTarget = attackController.targetToAttack != null;
+                if (hadValidTarget && agent.hasPath)
+                {
+                    pausedDestination = agent.destination;
+                }
+            }
+            return; // Don't process any logic while paused
+        }
+
+        // If we were paused and just resumed, restore state
+        if (wasPausedInThisState)
+        {
+            wasPausedInThisState = false;
+
+            // If we had a valid target when paused, restore the path
+            if (hadValidTarget && attackController.targetToAttack != null)
+            {
+                hasSetDestination = false; // Force re-evaluation of destination
+            }
+        }
+
         // Add guard check
         if (unitMovement != null && unitMovement.currentMode == MovementMode.Guard)
         {
@@ -50,6 +84,7 @@ public class UnitFollowState : StateMachineBehaviour
                 }
             }
         }
+
         // FIRST: Check if unit is commanded to move elsewhere - pause AI
         if (unitMovement != null && unitMovement.isCommandedtoMove &&
         unitMovement.currentMode == MovementMode.Move)
@@ -110,6 +145,9 @@ public class UnitFollowState : StateMachineBehaviour
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         hasSetDestination = false;
+        wasPausedInThisState = false;
+        hadValidTarget = false;
+
         if (agent != null)
         {
             agent.stoppingDistance = originalStoppingDistance;

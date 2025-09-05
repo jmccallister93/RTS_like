@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class AttackController : MonoBehaviour
+public class AttackController : MonoBehaviour, IPausable
 {
     public Transform targetToAttack;
 
@@ -12,17 +12,19 @@ public class AttackController : MonoBehaviour
     [Header("Attack Settings")]
     [SerializeField] private float attackDamage = 25f;
     [SerializeField] private float attackRange = 2f;
-    [SerializeField] private float detectionRange = 10f; // For manual override if needed
-
-
+    [SerializeField] private float detectionRange = 10f;
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
 
     [Header("Guard Mode")]
-    public bool isGuarding { get; private set; } = false;  // Public getter
-    public Vector3 guardPosition { get; private set; }      // Public getter
-    public float guardRadius { get; private set; } = 5f;    // Public getter // Adjustable guard area size
+    public bool isGuarding { get; private set; } = false;
+    public Vector3 guardPosition { get; private set; }
+    public float guardRadius { get; private set; } = 5f;
+
+    // Pause-related fields
+    private Transform pausedTarget;
+    private bool hadTargetWhenPaused;
 
     private void Start()
     {
@@ -38,10 +40,56 @@ public class AttackController : MonoBehaviour
         {
             Debug.LogWarning($"{gameObject.name} missing trigger SphereCollider for enemy detection!");
         }
+
+        // Register with pause manager
+        if (PauseManager.Instance != null)
+        {
+            PauseManager.Instance.RegisterPausable(this);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Unregister from pause manager
+        if (PauseManager.Instance != null)
+        {
+            PauseManager.Instance.UnregisterPausable(this);
+        }
+    }
+
+    public void OnPause()
+    {
+        hadTargetWhenPaused = targetToAttack != null;
+        pausedTarget = targetToAttack;
+    }
+
+    public void OnResume()
+    {
+        // Restore target if it still exists and is valid
+        if (hadTargetWhenPaused && pausedTarget != null)
+        {
+            // Verify target is still alive and valid
+            Unit targetUnit = pausedTarget.GetComponent<Unit>();
+            if (targetUnit != null && targetUnit.IsAlive())
+            {
+                targetToAttack = pausedTarget;
+            }
+            else
+            {
+                targetToAttack = null;
+            }
+        }
+
+        hadTargetWhenPaused = false;
+        pausedTarget = null;
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        // Don't process triggers while paused
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
         if (showDebugLogs)
             Debug.Log($"{gameObject.name} detected {other.name} entering trigger");
 
@@ -74,6 +122,10 @@ public class AttackController : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        // Don't process triggers while paused
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
         // Only clear target if it's the one leaving
         if (targetToAttack != null && other.transform == targetToAttack)
         {
@@ -91,6 +143,10 @@ public class AttackController : MonoBehaviour
     // Update method to handle lost targets that might have been destroyed
     private void Update()
     {
+        // Don't update while paused
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            return;
+
         // Check if our target is still valid
         if (targetToAttack != null)
         {
@@ -116,11 +172,10 @@ public class AttackController : MonoBehaviour
             if (targetToAttack != null)
             {
                 float distance = Vector3.Distance(transform.position, targetToAttack.position);
-
-              
+                // You can add distance checking logic here if needed
             }
-
         }
+
         // If guarding, check if target is leaving guard area
         if (isGuarding && targetToAttack != null)
         {
