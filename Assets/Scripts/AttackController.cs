@@ -26,6 +26,14 @@ public class AttackController : MonoBehaviour, IPausable
     private Transform pausedTarget;
     private bool hadTargetWhenPaused;
 
+    private UnitMovement movement;
+
+
+    private void Awake()
+    {
+        movement = GetComponent<UnitMovement>();
+    }
+
     private void Start()
     {
         var detectionCollider = GetComponent<SphereCollider>();
@@ -70,6 +78,7 @@ public class AttackController : MonoBehaviour, IPausable
 
     private void OnTriggerEnter(Collider other)
     {
+
         if (showDebugLogs) Debug.Log($"{name} detected {other.name} entering trigger");
 
         // Ignore while in pure Move mode
@@ -106,6 +115,8 @@ public class AttackController : MonoBehaviour, IPausable
     // Update method to handle lost targets that might have been destroyed
     private void Update()
     {
+        if (movement != null && movement.currentMode == MovementMode.Move)
+            return;
         if (targetToAttack != null)
         {
             var unit = targetToAttack.GetComponent<Unit>();
