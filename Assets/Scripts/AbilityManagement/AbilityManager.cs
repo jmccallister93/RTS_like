@@ -13,7 +13,8 @@ public enum TargetType
     Enemy,          // Single enemy target  
     Area,           // Area of effect at target location
     Path,           // Line/path from caster to target
-    Point           // Single point on ground
+    Point,           // Single point on ground
+    None            // No valid target type
 }
 
 public enum AbilityState
@@ -103,6 +104,10 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     public static event Action<GameObject, IAbility> OnAbilityUsed;
     public static event Action<GameObject, IAbility> OnAbilityCooldownStarted;
 
+    private static AbilityManager _instance;
+    public static AbilityManager Instance => _instance;
+    private UnitAbilities currentUnitAbilities;
+
     private void Awake()
     {
         mouse = Mouse.current;
@@ -110,6 +115,12 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         mainCamera = Camera.main;
 
         InitializeAbilitySlots();
+        if (_instance != null && _instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        _instance = this;
     }
 
     private void Start()
@@ -169,7 +180,22 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     #endregion
 
     #region Unit Selection Management
+    public void SetCurrentUnit(GameObject unit)
+    {
+        currentUnitAbilities = unit.GetComponent<UnitAbilities>();
+    }
+    public void UseAbility(int slot, Vector3 targetPos, GameObject target = null)
+    {
+        if (currentUnitAbilities == null) return;
 
+        AbilitySO ability = currentUnitAbilities.GetAbility(slot);
+        if (ability == null) return;
+
+        if (!ability.CanUse(currentUnitAbilities.gameObject)) return;
+
+        ability.StartCast(currentUnitAbilities.gameObject, targetPos, target);
+        ability.Execute(currentUnitAbilities.gameObject, targetPos, target);
+    }
     private void UpdateSelectedUnit()
     {
         GameObject newSelectedUnit = GetCurrentSelectedUnit();
@@ -293,18 +319,19 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
             abilitySlots[i].state = AbilityState.Ready;
         }
 
-        // This would typically load abilities based on unit type
-        // You can extend this to load from a UnitType component or similar
-        //var unitType = unit.GetComponent<UnitType>();
-        //if (unitType != null)
-        //{
-        //    var abilities = unitType.GetAbilities();
-        //    for (int i = 0; i < abilities.Length && i < abilitySlots.Length; i++)
-        //    {
-        //        abilitySlots[i].ability = abilities[i];
-        //    }
-        //}
-        
+        // Load abilities from UnitAbilities component
+        var unitAbilities = unit.GetComponent<UnitAbilities>();
+        if (unitAbilities != null)
+        {
+            for (int i = 0; i < unitAbilities.abilities.Length && i < abilitySlots.Length; i++)
+            {
+                if (unitAbilities.abilities[i] != null)
+                {
+                    abilitySlots[i].ability = unitAbilities.abilities[i];
+                    abilitySlots[i].state = AbilityState.Ready;
+                }
+            }
+        }
     }
 
     private void ClearAbilities()

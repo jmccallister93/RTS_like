@@ -319,6 +319,7 @@ GameObject:
   - component: {fileID: 4617355042445406440}
   - component: {fileID: 1133211024751393437}
   - component: {fileID: 2308565361275725158}
+  - component: {fileID: 477501147255151289}
   m_Layer: 7
   m_Name: Unit
   m_TagString: Player
@@ -540,6 +541,20 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 10
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &477501147255151289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77501def970f4e54a9b782fa2ca37f40, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnitAbilities
+  abilities:
+  - {fileID: 11400000, guid: 9e601e714da267e40bc8a01945b43ae0, type: 2}
 --- !u!1 &3543903029476029741
 GameObject:
   m_ObjectHideFlags: 0
