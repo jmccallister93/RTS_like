@@ -13,6 +13,11 @@ public class UnitIdleState : StateMachineBehaviour
         attackController = animator.transform.GetComponent<AttackController>();
         unitMovement = animator.transform.GetComponent<UnitMovement>();
 
+        // Clear all state parameters when entering Idle
+        animator.SetBool("isMoving", false);
+        animator.SetBool("isFollowing", false);
+        animator.SetBool("isAttacking", false);
+
         if (attackController != null)
         {
             attackController.SetIdleStateMaterial();
@@ -27,13 +32,11 @@ public class UnitIdleState : StateMachineBehaviour
         // Don't do AI behavior while player is commanding movement
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {
-            // Only return if it's a pure Move command (not AttackMove)
-            if (unitMovement.currentMode == MovementMode.Move)
-            {
-                return; // Ignore enemies during Move command
-            }
+           
+            animator.SetBool("isMoving", true);
+            return;
         }
-
+        CheckForTargets(animator);
         // Check for targets periodically (not every frame for performance)
         if (Time.time - lastTargetCheck >= targetCheckInterval)
         {

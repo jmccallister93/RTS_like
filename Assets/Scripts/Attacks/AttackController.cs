@@ -6,6 +6,7 @@ public class AttackController : MonoBehaviour, IPausable
 
     [Header("Materials")]
     public Material idleStateMaterial;
+    public Material movingStateMaterial;
     public Material followStateMaterial;
     public Material attackStateMaterial;
 
@@ -119,11 +120,13 @@ public class AttackController : MonoBehaviour, IPausable
             return;
         if (targetToAttack != null)
         {
+            
             var unit = targetToAttack.GetComponent<Unit>();
             if (unit != null && !unit.IsAlive())
             {
-                if (showDebugLogs) Debug.Log($"{name} target {targetToAttack.name} died, clearing target");
+               
                 targetToAttack = null;
+                movement.StopMovement();
                 return;
             }
         }
@@ -173,7 +176,7 @@ public class AttackController : MonoBehaviour, IPausable
         if (newTarget != null && ShouldAutoTarget(newTarget.gameObject))
         {
             targetToAttack = newTarget;
-            GetComponent<UnitMovement>()?.StopMovement();
+            movement.StopMovement();
 
             var animator = GetComponent<Animator>();
             if (animator) animator.SetBool("isFollowing", true);
@@ -208,6 +211,13 @@ public class AttackController : MonoBehaviour, IPausable
         var renderer = GetComponent<Renderer>();
         if (renderer != null && idleStateMaterial != null)
             renderer.material = idleStateMaterial;
+    }
+
+    public void SetMovingStateMaterial()
+    {
+        var renderer = GetComponent<Renderer>();
+        if (renderer != null && movingStateMaterial != null)
+            renderer.material = movingStateMaterial;
     }
 
     public void SetFollowStateMaterial()

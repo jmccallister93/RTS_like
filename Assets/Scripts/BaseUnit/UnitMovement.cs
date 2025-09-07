@@ -31,20 +31,14 @@ public class UnitMovement : MonoBehaviour, IPausable
     private Vector3 patrolEndPoint;
     private bool movingToEndPoint = true;
 
+    private Animator unitAnimator;
+
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        //PauseManager.Instance?.RegisterPausable(this); // optional helper
+        unitAnimator = GetComponent<Animator>();
     }
 
-    //private void OnDestroy()
-    //{
-    //    // Unregister from pause manager
-    //    if (PauseManager.Instance != null)
-    //    {
-    //        PauseManager.Instance.UnregisterPausable(this);
-    //    }
-    //}
 
     private void Update()
     {
@@ -61,7 +55,13 @@ public class UnitMovement : MonoBehaviour, IPausable
                 else
                 {
                     isCommandedtoMove = false;
-                    currentMode = MovementMode.None;
+                    currentMode = MovementMode.None; // This is important!
+
+                    // Notify animator that movement is complete
+                    if (unitAnimator != null)
+                    {
+                        unitAnimator.SetBool("isMoving", false);
+                    }
                 }
             }
         }
@@ -109,6 +109,11 @@ public class UnitMovement : MonoBehaviour, IPausable
             currentMode = mode;
             agent.isStopped = false;
             agent.SetDestination(navHit.position);
+
+            if (unitAnimator != null)
+            {
+                unitAnimator.SetBool("isMoving", true);
+            }
         }
     }
 
