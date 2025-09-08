@@ -126,8 +126,15 @@ public class UnitFollowState : StateMachineBehaviour
 
         if (agent != null)
         {
-            agent.isStopped = true;
-            agent.ResetPath();
+            // NEW: Don't clear path/destination if player is commanding movement
+            bool playerCommanding = unitMovement != null && unitMovement.isCommandedtoMove;
+
+            if (!playerCommanding)
+            {
+                agent.isStopped = true;
+                agent.ResetPath(); // Only clear path if NOT transitioning to player movement
+            }
+
             agent.stoppingDistance = originalStoppingDistance;
         }
 
@@ -141,6 +148,15 @@ public class UnitFollowState : StateMachineBehaviour
             agent.isStopped = true;
             agent.ResetPath();
         }
+
+        // Always clear following flag first
         animator.SetBool("isFollowing", false);
+
+        // NEW: Resume patrol if we were patrolling before combat
+        if (unitMovement != null && unitMovement.IsPatrolling())
+        {
+            unitMovement.ResumePatrolAfterCombat();
+            animator.SetBool("isMoving", true);
+        }
     }
 }

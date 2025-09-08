@@ -463,6 +463,7 @@ MonoBehaviour:
   raycastDistance: 100
   isCommandedtoMove: 0
   currentMode: 0
+  patrolInterruptedByCombat: 0
 --- !u!114 &1639268436421564568
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -475,9 +476,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 476ad874fac5c544d9cd359934ea0593, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
-  maxHealth: 100
+  maxHealth: 1000
   currentHealth: 0
   healthBar: {fileID: 6341198594044653373}
+  corpseLifetime: 10
 --- !u!114 &4617355042445406440
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -495,7 +497,7 @@ MonoBehaviour:
   movingStateMaterial: {fileID: 2100000, guid: a3fa570969154ae49a08ce09a2a5923b, type: 2}
   followStateMaterial: {fileID: 2100000, guid: cbe567b3e5eae24459021ff59f4129d6, type: 2}
   attackStateMaterial: {fileID: 2100000, guid: 86ac70060e8a49540ada7ab1c9ec9b03, type: 2}
-  attackDamage: 25
+  attackDamage: 50
   attackRange: 2
   detectionRange: 10
   showDebugLogs: 1

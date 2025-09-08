@@ -118,14 +118,24 @@ public class AttackController : MonoBehaviour, IPausable
     {
         if (movement != null && movement.currentMode == MovementMode.Move)
             return;
+
+        // Check if current target is dead and clear it immediately
         if (targetToAttack != null)
         {
-            
             var unit = targetToAttack.GetComponent<Unit>();
-            if (unit != null && !unit.IsAlive())
+            if (unit == null || !unit.IsAlive())
             {
-               
+                if (showDebugLogs) Debug.Log($"{name} clearing dead/invalid target: {targetToAttack.name}");
                 targetToAttack = null;
+
+                // Force transition back to idle state
+                var animator = GetComponent<Animator>();
+                if (animator != null)
+                {
+                    animator.SetBool("isAttacking", false);
+                    animator.SetBool("isFollowing", false);
+                }
+
                 movement.StopMovement();
                 return;
             }
@@ -157,12 +167,10 @@ public class AttackController : MonoBehaviour, IPausable
         if (potentialTarget == gameObject) return false;
 
         var unit = potentialTarget.GetComponent<Unit>();
-        if (unit == null || !unit.IsAlive()) return false;
+        if (unit == null || !unit.IsAlive()) return false; // This now checks isDead flag
 
         string myTag = tag;
         string theirTag = potentialTarget.tag;
-
-        if (showDebugLogs) Debug.Log($"{name} ({myTag}) checking target {potentialTarget.name} ({theirTag})");
 
         if (myTag == "Player" && theirTag == "Enemy") return true;
         if (myTag == "Enemy" && theirTag == "Player") return true;

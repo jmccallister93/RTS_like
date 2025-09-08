@@ -45,6 +45,7 @@ public class UnitMovingState : StateMachineBehaviour
     {
         if (agent == null || unitMovement == null) return;
 
+
         // 1. Pause handling
         if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
         {
@@ -56,36 +57,50 @@ public class UnitMovingState : StateMachineBehaviour
             agent.isStopped = false;
         }
 
-        // 2. PRIORITY: Check for enemies during AttackMove
-        if (unitMovement.currentMode == MovementMode.AttackMove)
+        // 2. PRIORITY: Check for enemies during combat movement modes
+        if (unitMovement.currentMode == MovementMode.AttackMove ||
+            unitMovement.currentMode == MovementMode.Patrol)
         {
-            // Check for targets periodically during AttackMove
+            // Check for targets periodically
             if (Time.time - lastTargetCheck >= targetCheckInterval)
             {
                 lastTargetCheck = Time.time;
 
-                if (CheckForEnemiesDuringAttackMove(animator))
+                if (CheckForEnemiesDuringMovement(animator))
                 {
-                    // Enemy found! Transition to Follow state
-                    Debug.Log($"{animator.name} found enemy during AttackMove - transitioning to Follow");
-                    animator.SetBool("isMoving", false);
+                    // Enemy found! 
+                    Debug.Log($"{animator.name} found enemy during {unitMovement.currentMode} - transitioning to Follow");
+
+                    // NEW: If we were patrolling, interrupt it for combat
+                    if (unitMovement.currentMode == MovementMode.Patrol)
+                    {
+                        Debug.Log($"{animator.name} CALLING InterruptPatrolForCombat()");
+                        unitMovement.InterruptPatrolForCombat();
+                    }
+
+                    //animator.SetBool("isMoving", false);
                     animator.SetBool("isFollowing", true);
                     return;
                 }
             }
         }
 
+
         // 3. End moving if no command or reached destination
         if (!unitMovement.isCommandedtoMove ||
             (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance))
         {
-            unitMovement.isCommandedtoMove = false;
-            unitMovement.currentMode = MovementMode.None;
+            // Preserve patrol mode if interrupted for combat
+            if (unitMovement.currentMode != MovementMode.Patrol || !unitMovement.patrolInterruptedByCombat)
+            {
+                unitMovement.isCommandedtoMove = false;
+                unitMovement.currentMode = MovementMode.None;
+            }
 
             // Clear the moving flag to return to Idle
             animator.SetBool("isMoving", false);
 
-            Debug.Log($"{animator.name} finished moving, returning to Idle");
+            Debug.Log($"{animator.name} finished moving, returning to Idle - currentMode preserved: {unitMovement.currentMode}");
             return;
         }
 
@@ -116,7 +131,7 @@ public class UnitMovingState : StateMachineBehaviour
     /// <summary>
     /// Check for enemies during AttackMove - similar to AttackController logic
     /// </summary>
-    private bool CheckForEnemiesDuringAttackMove(Animator animator)
+    private bool CheckForEnemiesDuringMovement(Animator animator)
     {
         if (attackController == null) return false;
 

@@ -32,11 +32,13 @@ public class UnitIdleState : StateMachineBehaviour
         // Don't do AI behavior while player is commanding movement
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {
-           
+
             animator.SetBool("isMoving", true);
             return;
         }
-        CheckForTargets(animator);
+
+        //CheckForTargets(animator);
+
         // Check for targets periodically (not every frame for performance)
         if (Time.time - lastTargetCheck >= targetCheckInterval)
         {

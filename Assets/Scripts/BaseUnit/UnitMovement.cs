@@ -30,6 +30,7 @@ public class UnitMovement : MonoBehaviour, IPausable
     private Vector3 patrolStartPoint;
     private Vector3 patrolEndPoint;
     private bool movingToEndPoint = true;
+    public bool patrolInterruptedByCombat = false;
 
     private Animator unitAnimator;
 
@@ -44,6 +45,11 @@ public class UnitMovement : MonoBehaviour, IPausable
     {
         if (isCommandedtoMove && agent != null)
         {
+            // NEW: Don't continue patrol automatically if interrupted by combat
+            if (currentMode == MovementMode.Patrol && patrolInterruptedByCombat)
+            {
+                return; // Wait for combat to end before resuming patrol
+            }
             if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance)
             {
                 if (currentMode == MovementMode.Patrol)
@@ -149,5 +155,66 @@ public class UnitMovement : MonoBehaviour, IPausable
     public float GetRemainingDistance()
     {
         return agent != null ? agent.remainingDistance : 0f;
+    }
+
+    public void InterruptPatrolForCombat()
+    {
+        Debug.Log($"{name} InterruptPatrolForCombat called - currentMode: {currentMode}");
+        if (currentMode == MovementMode.Patrol)
+        {
+            patrolInterruptedByCombat = true;
+            isCommandedtoMove = false;
+
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.ResetPath();
+                agent.isStopped = true;
+            }
+            Debug.Log($"{name} patrol interrupted for combat - patrolInterruptedByCombat: {patrolInterruptedByCombat}");
+        }
+        else
+        {
+            Debug.Log($"{name} NOT interrupting patrol - currentMode is {currentMode}, not Patrol");
+        }
+    }
+
+    public void ResumePatrolAfterCombat()
+    {
+        Debug.Log($"{name} ResumePatrolAfterCombat called");
+
+        if (patrolInterruptedByCombat)
+        {
+            patrolInterruptedByCombat = false;
+            isCommandedtoMove = true;
+            currentMode = MovementMode.Patrol;
+
+            // NEW: Clear any lingering targets to prevent immediate re-detection
+            var attackController = GetComponent<AttackController>();
+            if (attackController != null)
+            {
+                attackController.targetToAttack = null;
+            }
+
+            Vector3 destination = movingToEndPoint ? patrolEndPoint : patrolStartPoint;
+
+            if (agent != null && agent.isOnNavMesh && agent.enabled)
+            {
+                agent.isStopped = false;
+                agent.SetDestination(destination);
+            }
+
+            if (unitAnimator != null)
+            {
+                unitAnimator.SetBool("isMoving", true);
+            }
+
+            Debug.Log($"{name} resuming patrol after combat - destination: {destination}");
+        }
+    }
+
+    // NEW: Check if patrol is active
+    public bool IsPatrolling()
+    {
+        return currentMode == MovementMode.Patrol;
     }
 }

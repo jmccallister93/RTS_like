@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
 public class UnitAttackState : StateMachineBehaviour
@@ -91,8 +91,20 @@ public class UnitAttackState : StateMachineBehaviour
         Unit targetUnit = attackController.targetToAttack.GetComponent<Unit>();
         if (targetUnit == null || !targetUnit.IsAlive())
         {
-            Debug.Log($"{animator.name} target dead - exiting attack to idle");
+            Debug.Log($"{animator.name} target dead or invalid - checking for other enemies");
             attackController.targetToAttack = null; // Clear the dead target
+
+            // NEW: Check for other enemies before exiting combat
+            if (CheckForOtherEnemies(animator))
+            {
+                Debug.Log($"{animator.name} found another enemy - transitioning to Follow");
+                animator.SetBool("isAttacking", false);
+                animator.SetBool("isFollowing", true);
+                return;
+            }
+
+            // No other enemies found - exit to idle/patrol
+            Debug.Log($"{animator.name} no other enemies - exiting to idle");
             ExitToIdle(animator);
             return;
         }
@@ -126,8 +138,8 @@ public class UnitAttackState : StateMachineBehaviour
 
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        // Re-enable NavMeshAgent when leaving attack state
-        if (agent != null)
+        // SAFER: Re-enable NavMeshAgent when leaving attack state
+        if (agent != null && agent.isOnNavMesh && agent.enabled)
         {
             agent.isStopped = false;
         }
@@ -137,12 +149,96 @@ public class UnitAttackState : StateMachineBehaviour
     }
 
     /// <summary>
+    /// Check for other enemies when current target dies
+    /// </summary>
+    private bool CheckForOtherEnemies(Animator animator)
+    {
+        if (attackController == null) return false;
+
+        float detectionRange = 10f; // Default range
+
+        // Get detection range from sphere collider if available
+        SphereCollider sphereCollider = animator.GetComponent<SphereCollider>();
+        if (sphereCollider != null && sphereCollider.isTrigger)
+        {
+            detectionRange = sphereCollider.radius;
+        }
+
+        // Find all colliders within detection range
+        Collider[] nearbyColliders = Physics.OverlapSphere(animator.transform.position, detectionRange);
+
+        Transform nearestEnemy = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (Collider collider in nearbyColliders)
+        {
+            // Skip ourselves
+            if (collider.transform == animator.transform) continue;
+
+            // Check if it's a valid target
+            if (ShouldTarget(collider.gameObject, animator.gameObject))
+            {
+                float distance = Vector3.Distance(animator.transform.position, collider.transform.position);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestEnemy = collider.transform;
+                }
+            }
+        }
+
+        // Set the nearest enemy as target if found
+        if (nearestEnemy != null)
+        {
+            attackController.targetToAttack = nearestEnemy;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Check if we should target this object
+    /// </summary>
+    private bool ShouldTarget(GameObject potentialTarget, GameObject myUnit)
+    {
+        // Must have a Unit component and be alive
+        Unit targetUnit = potentialTarget.GetComponent<Unit>();
+        if (targetUnit == null || !targetUnit.IsAlive())
+            return false;
+
+        // Check team affiliation
+        string myTag = myUnit.tag;
+        string targetTag = potentialTarget.tag;
+
+        // Player units should target Enemy units
+        if (myTag == "Player" && targetTag == "Enemy")
+            return true;
+
+        // Enemy units should target Player units  
+        if (myTag == "Enemy" && targetTag == "Player")
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
     /// Properly exit to idle state by clearing all animator bools
     /// </summary>
     private void ExitToIdle(Animator animator)
     {
         animator.SetBool("isAttacking", false);
-        animator.SetBool("isFollowing", false);
+        //animator.SetBool("isFollowing", false);
+
+        if (unitMovement != null && unitMovement.patrolInterruptedByCombat)
+        {
+            unitMovement.ResumePatrolAfterCombat();
+            animator.SetBool("isMoving", true);
+        }
+        else
+        {
+            animator.SetBool("isMoving", false);
+        }
     }
 
     private void PerformAttack(Transform target)
