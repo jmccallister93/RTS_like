@@ -6800,6 +6800,10 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 963194227}
+    - target: {fileID: 1639268436421564568, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: maxHealth
+      value: 1000
+      objectReference: {fileID: 0}
     - target: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_Name
       value: Unit

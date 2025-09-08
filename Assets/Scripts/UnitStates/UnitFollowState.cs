@@ -54,6 +54,24 @@ public class UnitFollowState : StateMachineBehaviour
             hasSetDestination = false; // force re-evaluate
         }
 
+        // PRIORITY 1: Check if player is commanding movement - override AI
+        if (unitMovement != null && unitMovement.isCommandedtoMove)
+        {
+            Debug.Log($"{animator.name} player commanding movement from Follow - transitioning to Moving");
+
+            // Clear target since player is overriding
+            if (attackController != null)
+            {
+                attackController.targetToAttack = null;
+            }
+
+            // Transition directly to Moving state
+            animator.SetBool("isFollowing", false);
+            animator.SetBool("isAttacking", false);
+            animator.SetBool("isMoving", true);
+            return;
+        }
+
         if (attackController == null || attackController.targetToAttack == null)
         {
             ClearAndExit(animator);

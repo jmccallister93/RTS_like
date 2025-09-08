@@ -57,7 +57,6 @@ public class UnitAttackState : StateMachineBehaviour
         {
             wasPausedInThisState = false;
             // Adjust last attack time to account for paused duration
-            // This prevents immediate attacking after resuming
             float pauseDuration = Time.time - pausedLastAttackTime;
             lastAttackTime = Time.time - (pausedLastAttackTime - lastAttackTime);
         }
@@ -65,8 +64,18 @@ public class UnitAttackState : StateMachineBehaviour
         // PRIORITY 1: Check if player is commanding movement - override AI
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {
-            Debug.Log($"{animator.name} player commanding movement - exiting attack");
-            ExitToIdle(animator);
+            Debug.Log($"{animator.name} player commanding movement - transitioning directly to Moving");
+
+            // Clear attack target since player is overriding
+            if (attackController != null)
+            {
+                attackController.targetToAttack = null;
+            }
+
+            // Transition directly to Moving state
+            animator.SetBool("isAttacking", false);
+            animator.SetBool("isFollowing", false);
+            animator.SetBool("isMoving", true);
             return;
         }
 
