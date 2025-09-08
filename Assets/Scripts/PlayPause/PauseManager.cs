@@ -73,9 +73,11 @@ public class PauseManager : MonoBehaviour
     public void ResumeGame()
     {
         if (!IsPaused) return;
-
+        
         IsPaused = false;
         Time.timeScale = 1f;
+
+        if (pauseUI) pauseUI.SetActive(false);
 
         EnablePausables();       // re-enables + calls OnResume
         ResumeAllNavMeshAgents();

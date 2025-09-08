@@ -37,6 +37,17 @@ public class UnitIdleState : StateMachineBehaviour
             return;
         }
 
+        // PRIORITY 1: Check for ability usage
+        if (animator.GetBool("isUsingAbility"))
+        {
+            var stateContext = animator.GetComponent<StateContext>();
+            if (stateContext != null)
+            {
+                stateContext.SaveCurrentState(animator);
+            }
+            return; // Let animator transition to AbilityState
+        }
+
         //CheckForTargets(animator);
 
         // Check for targets periodically (not every frame for performance)

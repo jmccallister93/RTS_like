@@ -61,7 +61,18 @@ public class UnitAttackState : StateMachineBehaviour
             lastAttackTime = Time.time - (pausedLastAttackTime - lastAttackTime);
         }
 
-        // PRIORITY 1: Check if player is commanding movement - override AI
+        // PRIORITY 1: Check for ability usage
+        if (animator.GetBool("isUsingAbility"))
+        {
+            var stateContext = animator.GetComponent<StateContext>();
+            if (stateContext != null)
+            {
+                stateContext.SaveCurrentState(animator);
+            }
+            return; // Let animator transition to AbilityState
+        }
+
+        // PRIORITY 2: Check if player is commanding movement - override AI
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {
             Debug.Log($"{animator.name} player commanding movement - transitioning directly to Moving");
@@ -79,7 +90,7 @@ public class UnitAttackState : StateMachineBehaviour
             return;
         }
 
-        // PRIORITY 2: Check if target is null or destroyed
+        // PRIORITY 3: Check if target is null or destroyed
         if (attackController == null || attackController.targetToAttack == null)
         {
             Debug.Log($"{animator.name} no target - exiting attack to idle");
@@ -87,7 +98,7 @@ public class UnitAttackState : StateMachineBehaviour
             return;
         }
 
-        // PRIORITY 3: Check if target is still alive
+        // PRIORITY 4: Check if target is still alive
         Unit targetUnit = attackController.targetToAttack.GetComponent<Unit>();
         if (targetUnit == null || !targetUnit.IsAlive())
         {
@@ -109,7 +120,7 @@ public class UnitAttackState : StateMachineBehaviour
             return;
         }
 
-        // PRIORITY 4: Check distance - too far to attack
+        // PRIORITY 5: Check distance - too far to attack
         float distanceFromTarget = Vector3.Distance(animator.transform.position, attackController.targetToAttack.position);
 
         if (distanceFromTarget > exitAttackDistance)
@@ -120,7 +131,7 @@ public class UnitAttackState : StateMachineBehaviour
             return;
         }
 
-        // PRIORITY 5: We're good to attack - look at target and attack
+        // PRIORITY 6: We're good to attack - look at target and attack
         Vector3 lookDirection = (attackController.targetToAttack.position - animator.transform.position).normalized;
         lookDirection.y = 0;
         if (lookDirection != Vector3.zero)

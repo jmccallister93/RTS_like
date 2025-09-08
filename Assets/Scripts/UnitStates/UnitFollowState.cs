@@ -54,6 +54,17 @@ public class UnitFollowState : StateMachineBehaviour
             hasSetDestination = false; // force re-evaluate
         }
 
+        // PRIORITY 1: Check for ability usage
+        if (animator.GetBool("isUsingAbility"))
+        {
+            var stateContext = animator.GetComponent<StateContext>();
+            if (stateContext != null)
+            {
+                stateContext.SaveCurrentState(animator);
+            }
+            return; // Let animator transition to AbilityState
+        }
+
         // PRIORITY 1: Check if player is commanding movement - override AI
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {

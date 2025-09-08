@@ -57,6 +57,17 @@ public class UnitMovingState : StateMachineBehaviour
             agent.isStopped = false;
         }
 
+        // 1.5 PRIORITY: Check for ability usage
+        if (animator.GetBool("isUsingAbility"))
+        {
+            var stateContext = animator.GetComponent<StateContext>();
+            if (stateContext != null)
+            {
+                stateContext.SaveCurrentState(animator);
+            }
+            return; // Let animator transition to AbilityState
+        }
+
         // 2. PRIORITY: Check for enemies during combat movement modes
         if (unitMovement.currentMode == MovementMode.AttackMove ||
             unitMovement.currentMode == MovementMode.Patrol)
