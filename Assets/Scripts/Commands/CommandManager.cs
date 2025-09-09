@@ -10,6 +10,7 @@ public enum CommandType
     Guard,
     AttackMove,
     Patrol,
+    Hold // NEW: Added Hold command type
 }
 
 public class CommandManager : MonoBehaviour, IRunWhenPaused
@@ -20,6 +21,7 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     public Button attackMoveButton;
     public Button patrolButton;
     public Button stopMovementButton;
+    public Button holdPositionButton; // NEW: Hold position button
 
     [Header("Visual Feedback")]
     public Color normalColor = Color.white;
@@ -47,6 +49,7 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         attackMoveButton.onClick.AddListener(() => SelectCommand(CommandType.AttackMove));
         patrolButton.onClick.AddListener(() => SelectCommand(CommandType.Patrol));
         stopMovementButton.onClick.AddListener(() => ExecuteStopCommand());
+        holdPositionButton.onClick.AddListener(() => ExecuteHoldCommand());
 
         // Start with Move command selected
         SelectCommand(CommandType.Move);
@@ -135,45 +138,45 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     }
 
     void HandleHotkeyInput()
-{
-    // Only process hotkeys if we're not typing in a text field
-    if (EventSystem.current.currentSelectedGameObject != null)
     {
-        var inputField = EventSystem.current.currentSelectedGameObject.GetComponent<InputField>();
-        if (inputField != null)
+        // Only process hotkeys if we're not typing in a text field
+        if (EventSystem.current.currentSelectedGameObject != null)
         {
-            return; // Don't process hotkeys while typing
+            var inputField = EventSystem.current.currentSelectedGameObject.GetComponent<InputField>();
+            if (inputField != null)
+            {
+                return; // Don't process hotkeys while typing
+            }
+        }
+
+        // Command hotkeys
+        if (keyboard.zKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.Move);
+        }
+        else if (keyboard.xKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.Guard);
+        }
+        else if (keyboard.cKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.AttackMove);
+        }
+        else if (keyboard.vKey.wasPressedThisFrame)
+        {
+            SelectCommand(CommandType.Patrol);
+        }
+        else if (keyboard.bKey.wasPressedThisFrame)
+        {
+            ExecuteHoldCommand();
+        }
+        else if (keyboard.nKey.wasPressedThisFrame) // CHANGED: H for Hold Position
+        {
+            ExecuteStopCommand();
+           
         }
     }
 
-    // Command hotkeys
-    if (keyboard.zKey.wasPressedThisFrame)
-    {
-        SelectCommand(CommandType.Move);
-    }
-    else if (keyboard.xKey.wasPressedThisFrame)
-    {
-        SelectCommand(CommandType.Guard);
-    }
-    else if (keyboard.cKey.wasPressedThisFrame)
-    {
-        SelectCommand(CommandType.AttackMove);
-    }
-    else if (keyboard.vKey.wasPressedThisFrame)
-    {
-        SelectCommand(CommandType.Patrol);
-    }
-    else if (keyboard.bKey.wasPressedThisFrame)
-    {
-        ExecuteStopCommand();
-    }
-    
-    // Alternative: Use H for Hold Position (same as stop)
-    else if (keyboard.hKey.wasPressedThisFrame)
-    {
-        ExecuteStopCommand();
-    }
-}
     bool IsValidEnemyTarget(GameObject target, List<GameObject> selectedUnits)
     {
         if (target == null) return false;
@@ -225,6 +228,36 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         }
 
         // Return to Move command after stopping
+        SelectCommand(CommandType.Move);
+    }
+
+    // NEW: Execute Hold Command
+    void ExecuteHoldCommand()
+    {
+        List<GameObject> selectedUnits = UnitSelectionManager.Instance?.unitsSelected;
+
+        if (selectedUnits != null && selectedUnits.Count > 0)
+        {
+            foreach (GameObject unitObj in selectedUnits)
+            {
+                if (unitObj != null)
+                {
+                    var holdCommand = new HoldCommand(unitObj);
+
+                    // Queue command if paused, execute immediately if not
+                    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+                    {
+                        CommandQueue.Instance.QueueCommand(holdCommand);
+                    }
+                    else
+                    {
+                        holdCommand.Execute();
+                    }
+                }
+            }
+        }
+
+        // Stay in Hold command mode (or return to Move if you prefer)
         SelectCommand(CommandType.Move);
     }
 
@@ -301,6 +334,8 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         attackMoveButton.GetComponent<Image>().color = normalColor;
         patrolButton.GetComponent<Image>().color = normalColor;
         stopMovementButton.GetComponent<Image>().color = normalColor;
+        holdPositionButton.GetComponent<Image>().color = normalColor;
+
 
         // Highlight selected command
         switch (currentCommand)
@@ -316,6 +351,9 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
                 break;
             case CommandType.Patrol:
                 patrolButton.GetComponent<Image>().color = selectedColor;
+                break;
+            case CommandType.Hold:
+                holdPositionButton.GetComponent<Image>().color = selectedColor;
                 break;
         }
     }
@@ -341,6 +379,10 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
                         break;
                     case CommandType.Patrol:
                         command = new PatrolCommand(unitObj, targetPosition);
+                        break;
+                    case CommandType.Hold:
+                       
+                        command = new HoldCommand(unitObj);
                         break;
                 }
 

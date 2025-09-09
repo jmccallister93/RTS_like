@@ -206,3 +206,25 @@ public class StopCommand : ICommand
         }
     }
 }
+
+public class HoldCommand : ICommand
+{
+    private GameObject unit;
+
+    public HoldCommand(GameObject unit)
+    {
+        this.unit = unit;
+    }
+    public GameObject TargetUnit => unit;
+    public void Execute()
+    {
+        if (unit != null)
+        {
+            Unit unitComponent = unit.GetComponent<Unit>();
+            if (unitComponent != null)
+            {
+                unitComponent.HoldPosition();
+            }
+        }
+    }
+}

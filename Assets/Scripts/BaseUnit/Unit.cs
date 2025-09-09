@@ -21,6 +21,9 @@ public class Unit : MonoBehaviour
     // Death state
     private bool isDead = false;
 
+    // NEW: Hold position state
+    private bool isHoldingPosition = false;
+
     void Start()
     {
         // Initialize components
@@ -126,9 +129,15 @@ public class Unit : MonoBehaviour
     public bool IsAlive() => !isDead; // Updated to check isDead flag
     public bool IsDead() => isDead;
 
+    // NEW: Public getter for hold position state
+    public bool IsHoldingPosition() => isHoldingPosition;
+
     public void MoveTo(Vector3 targetPosition)
     {
         if (isDead || unitMovement == null) return;
+
+        // Clear hold position state when given new move command
+        ClearHoldPosition();
 
         if (attackController != null)
         {
@@ -142,6 +151,9 @@ public class Unit : MonoBehaviour
     {
         if (isDead || unitMovement == null) return;
 
+        // Clear hold position state when given new attack move command
+        ClearHoldPosition();
+
         if (attackController != null)
         {
             attackController.ClearGuardPosition();
@@ -153,12 +165,18 @@ public class Unit : MonoBehaviour
     {
         if (isDead || attackController == null) return;
 
+        // Clear hold position state when given new guard command
+        ClearHoldPosition();
+
         attackController.SetGuardPosition(guardPosition, radius);
     }
 
     public void PatrolTo(Vector3 patrolPoint)
     {
         if (isDead || unitMovement == null) return;
+
+        // Clear hold position state when given new patrol command
+        ClearHoldPosition();
 
         if (attackController != null)
         {
@@ -171,6 +189,48 @@ public class Unit : MonoBehaviour
     {
         if (isDead || unitMovement == null) return;
 
+        // Clear hold position state - stop is different from hold
+        ClearHoldPosition();
+
         unitMovement.StopMovement();
+    }
+
+    // NEW: Hold Position - stops movement and prevents attacking/following
+    public void HoldPosition()
+    {
+        if (isDead) return;
+
+        // Set hold position state
+        isHoldingPosition = true;
+
+        // Stop current movement
+        if (unitMovement != null)
+        {
+            unitMovement.StopMovement();
+        }
+
+        // Clear attack target and guard position
+        if (attackController != null)
+        {
+            attackController.ClearGuardPosition();
+            attackController.targetToAttack = null;
+            
+        }
+    }
+
+    
+    public void ClearHoldPosition()
+    {
+        if (isHoldingPosition)
+        {
+            Debug.Log($"{gameObject.name} is no longer holding position");
+            isHoldingPosition = false;
+
+            // Notify attack controller if needed
+            if (attackController != null)
+            {
+                // attackController.SetHoldPosition(false);
+            }
+        }
     }
 }

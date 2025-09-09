@@ -14,6 +14,7 @@ public class AttackController : MonoBehaviour, IPausable
     [SerializeField] private float attackDamage = 25f;
     [SerializeField] private float attackRange = 2f;
     [SerializeField] private float detectionRange = 10f;
+    [SerializeField] private float maxAttackRange = 2.5f; // Maximum range for attacking while holding position
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
@@ -28,11 +29,12 @@ public class AttackController : MonoBehaviour, IPausable
     private bool hadTargetWhenPaused;
 
     private UnitMovement movement;
-
+    private Unit unitComponent; // NEW: Reference to Unit component
 
     private void Awake()
     {
         movement = GetComponent<UnitMovement>();
+        unitComponent = GetComponent<Unit>(); // NEW: Get Unit component
     }
 
     private void Start()
@@ -79,8 +81,14 @@ public class AttackController : MonoBehaviour, IPausable
 
     private void OnTriggerEnter(Collider other)
     {
-
         if (showDebugLogs) Debug.Log($"{name} detected {other.name} entering trigger");
+
+        // NEW: Don't acquire targets while holding position
+        if (unitComponent != null && unitComponent.IsHoldingPosition())
+        {
+            if (showDebugLogs) Debug.Log($"{name} is holding position, ignoring new target {other.name}");
+            return;
+        }
 
         // Ignore while in pure Move mode
         var movement = GetComponent<UnitMovement>();
@@ -139,9 +147,45 @@ public class AttackController : MonoBehaviour, IPausable
                 movement.StopMovement();
                 return;
             }
+
+            // NEW: Handle hold position behavior with current target
+            if (unitComponent != null && unitComponent.IsHoldingPosition())
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, targetToAttack.position);
+
+                // Only attack if target is within close range, don't chase
+                if (distanceToTarget > maxAttackRange)
+                {
+                    if (showDebugLogs) Debug.Log($"{name} holding position - target {targetToAttack.name} moved out of attack range");
+                    targetToAttack = null;
+
+                    // Stop any movement and set to idle
+                    var animator = GetComponent<Animator>();
+                    if (animator != null)
+                    {
+                        animator.SetBool("isAttacking", false);
+                        animator.SetBool("isFollowing", false);
+                    }
+                    movement.StopMovement();
+                }
+                else
+                {
+                    // Target is close enough - stop movement but continue attacking
+                    movement.StopMovement();
+
+                    var animator = GetComponent<Animator>();
+                    if (animator != null)
+                    {
+                        animator.SetBool("isFollowing", false); // Don't follow while holding
+                        // Let attacking animation continue if in range
+                    }
+                }
+                return; // Don't process normal movement/guard logic while holding
+            }
         }
 
-        if (isGuarding && targetToAttack != null)
+        // Normal guard behavior (only if not holding position)
+        if (isGuarding && targetToAttack != null && (unitComponent == null || !unitComponent.IsHoldingPosition()))
         {
             float d = Vector3.Distance(targetToAttack.position, guardPosition);
             if (d > guardRadius)
@@ -157,7 +201,12 @@ public class AttackController : MonoBehaviour, IPausable
         isGuarding = true;
         guardPosition = position;
         guardRadius = radius;
-        GetComponent<UnitMovement>()?.MoveToPosition(position, MovementMode.Guard);
+
+        // NEW: Don't move to guard position if holding position
+        if (unitComponent == null || !unitComponent.IsHoldingPosition())
+        {
+            GetComponent<UnitMovement>()?.MoveToPosition(position, MovementMode.Guard);
+        }
     }
 
     public void ClearGuardPosition() => isGuarding = false;
@@ -179,17 +228,71 @@ public class AttackController : MonoBehaviour, IPausable
 
     public void SetTarget(Transform newTarget)
     {
+        // NEW: Don't set new targets while holding position (except for direct attack commands)
+        if (unitComponent != null && unitComponent.IsHoldingPosition())
+        {
+            // Only allow targeting if the target is within attack range
+            if (newTarget != null)
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, newTarget.position);
+                if (distanceToTarget > maxAttackRange)
+                {
+                    if (showDebugLogs) Debug.Log($"{name} holding position - ignoring target {newTarget.name} (too far: {distanceToTarget:F2})");
+                    return;
+                }
+            }
+        }
+
         ClearGuardPosition();
 
         if (newTarget != null && ShouldAutoTarget(newTarget.gameObject))
         {
             targetToAttack = newTarget;
-            movement.StopMovement();
 
-            var animator = GetComponent<Animator>();
-            if (animator) animator.SetBool("isFollowing", true);
+            // NEW: Don't stop movement or set following if holding position
+            if (unitComponent == null || !unitComponent.IsHoldingPosition())
+            {
+                movement.StopMovement();
+
+                var animator = GetComponent<Animator>();
+                if (animator) animator.SetBool("isFollowing", true);
+            }
 
             if (showDebugLogs) Debug.Log($"{name} manually targeting {newTarget.name}");
+        }
+    }
+
+    // NEW: Method to handle hold position state changes
+    public void SetHoldPosition(bool holdPosition)
+    {
+        if (holdPosition)
+        {
+            // When entering hold position, stop movement and clear guard
+            movement?.StopMovement();
+            ClearGuardPosition();
+
+            // If we have a target that's too far, clear it
+            if (targetToAttack != null)
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, targetToAttack.position);
+                if (distanceToTarget > maxAttackRange)
+                {
+                    targetToAttack = null;
+
+                    var animator = GetComponent<Animator>();
+                    if (animator != null)
+                    {
+                        animator.SetBool("isAttacking", false);
+                        animator.SetBool("isFollowing", false);
+                    }
+                }
+            }
+
+            if (showDebugLogs) Debug.Log($"{name} entering hold position mode");
+        }
+        else
+        {
+            if (showDebugLogs) Debug.Log($"{name} exiting hold position mode");
         }
     }
 
@@ -257,6 +360,15 @@ public class AttackController : MonoBehaviour, IPausable
         // Follow range (medium sphere)
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, 2.0f);
+
+        // NEW: Draw max attack range for hold position (if holding)
+        if (unitComponent != null && unitComponent.IsHoldingPosition())
+        {
+            Gizmos.color = new Color(1f, 0.5f, 0f, 0.3f); // Orange for hold position range
+            Gizmos.DrawSphere(transform.position, maxAttackRange);
+            Gizmos.color = Color.orange;
+            Gizmos.DrawWireSphere(transform.position, maxAttackRange);
+        }
 
         // Draw line to current target
         if (targetToAttack != null)
