@@ -10,7 +10,11 @@ public enum CommandType
     Guard,
     AttackMove,
     Patrol,
-    Hold // NEW: Added Hold command type
+    Hold,
+    Ability1,
+    Ability2,
+    Ability3,
+    Ability4,
 }
 
 public class CommandManager : MonoBehaviour, IRunWhenPaused
@@ -21,17 +25,23 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     public Button attackMoveButton;
     public Button patrolButton;
     public Button stopMovementButton;
-    public Button holdPositionButton; // NEW: Hold position button
+    public Button holdPositionButton;
+    public Button abilityButton1;
+    public Button abilityButton2;
+    public Button abilityButton3;
+    public Button abilityButton4;
 
     [Header("Visual Feedback")]
     public Color normalColor = Color.white;
     public Color selectedColor = Color.yellow;
 
-    [Header("Guard Mode Settings")]
-    public float guardAreaRadius = 5f;
-    public Color guardAreaColor = new Color(0, 0.5f, 1f, 0.5f);
-    private GameObject guardAreaIndicator;
-    private LineRenderer guardCircleRenderer;
+    [Header("Guard Area")]
+    public GuardAreaDisplay guardAreaDisplay;
+
+    // For pending ability casts
+    private AbilitySO pendingAbility;
+    private GameObject pendingCaster;
+    private bool isAwaitingTarget = false;
 
     private CommandType currentCommand = CommandType.Move;
     private Mouse mouse;
@@ -39,7 +49,6 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
 
     void Start()
     {
-        // Initialize mouse reference
         mouse = Mouse.current;
         keyboard = Keyboard.current;
 
@@ -50,274 +59,130 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         patrolButton.onClick.AddListener(() => SelectCommand(CommandType.Patrol));
         stopMovementButton.onClick.AddListener(() => ExecuteStopCommand());
         holdPositionButton.onClick.AddListener(() => ExecuteHoldCommand());
+        abilityButton1.onClick.AddListener(() => SelectCommand(CommandType.Ability1));
+        abilityButton2.onClick.AddListener(() => SelectCommand(CommandType.Ability2));
+        abilityButton3.onClick.AddListener(() => SelectCommand(CommandType.Ability3));
+        abilityButton4.onClick.AddListener(() => SelectCommand(CommandType.Ability4));
 
-        // Start with Move command selected
         SelectCommand(CommandType.Move);
-
-        // Create guard area indicator
-        CreateGuardAreaIndicator();
+        guardAreaDisplay.CreateGuardAreaIndicator();
     }
 
     void Update()
     {
         HandleHotkeyInput();
-        // Don't process if clicking on UI
+
         if (mouse.leftButton.wasPressedThisFrame && EventSystem.current.IsPointerOverGameObject())
-        {
             return;
-        }
 
         List<GameObject> selectedUnits = UnitSelectionManager.Instance?.unitsSelected;
         bool hasSelectedUnits = selectedUnits != null && selectedUnits.Count > 0;
 
-        // Show/hide guard area preview - works even when paused
+        // Guard area preview
         if (currentCommand == CommandType.Guard && hasSelectedUnits && !mouse.rightButton.isPressed)
-        {
-            ShowGuardAreaPreview();
-        }
+            guardAreaDisplay.ShowGuardAreaPreview();
         else
-        {
-            HideGuardAreaPreview();
-        }
+            guardAreaDisplay.HideGuardAreaPreview();
 
-        // Handle right-click commands
-        if (mouse.rightButton.wasPressedThisFrame)
+        // Right-click handling
+        if (mouse.rightButton.wasPressedThisFrame && hasSelectedUnits)
         {
-            if (hasSelectedUnits)
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            RaycastHit hit;
+
+            // Enemy targeting
+            if (Physics.Raycast(ray, out hit, 100f, UnitSelectionManager.Instance.attackable))
             {
-                // FIRST: Check if we clicked on an enemy unit
-                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-                RaycastHit hit;
-
-                // Check for enemy click first (using attackable layer)
-                if (Physics.Raycast(ray, out hit, 100f, UnitSelectionManager.Instance.attackable))
+                GameObject clickedObject = hit.collider.gameObject;
+                if (IsValidEnemyTarget(clickedObject, selectedUnits))
                 {
-                    Debug.Log($"Raycast hit {hit.collider.gameObject.name} on layer {hit.collider.gameObject.layer}");
-
-                    GameObject clickedObject = hit.collider.gameObject;
-
-                    // Check if it's a valid enemy
-                    if (IsValidEnemyTarget(clickedObject, selectedUnits))
+                    foreach (GameObject unit in selectedUnits)
                     {
-                        // Create attack commands for each selected unit
-                        foreach (GameObject unit in selectedUnits)
-                        {
-                            if (unit != null)
-                            {
-                                var attackCommand = new AttackTargetCommand(unit, hit.transform);
-
-                                // Queue command if paused, execute immediately if not
-                                if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-                                {
-                                    CommandQueue.Instance.QueueCommand(attackCommand);
-                                }
-                                else
-                                {
-                                    attackCommand.Execute();
-                                }
-                            }
-                        }
-
-                        // Hide preview and return to Move command
-                        HideGuardAreaPreview();
-                        SelectCommand(CommandType.Move);
-                        return; // Don't process normal movement
+                        var attackCommand = new AttackTargetCommand(unit, hit.transform);
+                        ExecuteOrQueueCommand(attackCommand);
                     }
+
+                    guardAreaDisplay.HideGuardAreaPreview();
+                    SelectCommand(CommandType.Move);
+                    return;
                 }
-
-                // If we didn't click on an enemy, execute normal command
-                Vector3 targetPosition = GetMouseWorldPosition();
-                ExecuteCommand(targetPosition, selectedUnits);
-
-                // Hide preview after command
-                HideGuardAreaPreview();
             }
 
+            // If an ability is awaiting target
+            if (isAwaitingTarget && pendingAbility != null && pendingCaster != null)
+            {
+                Vector3 targetPosition = hit.point;
+                GameObject clickedObject = hit.collider?.gameObject;
+
+                pendingAbility.StartCast(pendingCaster, targetPosition, clickedObject);
+                pendingAbility.Execute(pendingCaster, targetPosition, clickedObject);
+
+                pendingAbility = null;
+                pendingCaster = null;
+                isAwaitingTarget = false;
+
+                SelectCommand(CommandType.Move);
+                return;
+            }
+
+            // Normal movement/command
+            Vector3 destination = GetMouseWorldPosition();
+            ExecuteCommand(destination, selectedUnits);
+            guardAreaDisplay.HideGuardAreaPreview();
             SelectCommand(CommandType.Move);
         }
     }
 
     void HandleHotkeyInput()
     {
-        // Only process hotkeys if we're not typing in a text field
-        if (EventSystem.current.currentSelectedGameObject != null)
-        {
-            var inputField = EventSystem.current.currentSelectedGameObject.GetComponent<InputField>();
-            if (inputField != null)
-            {
-                return; // Don't process hotkeys while typing
-            }
-        }
+        if (EventSystem.current.currentSelectedGameObject != null &&
+            EventSystem.current.currentSelectedGameObject.GetComponent<InputField>() != null)
+            return;
 
-        // Command hotkeys
-        if (keyboard.zKey.wasPressedThisFrame)
-        {
-            SelectCommand(CommandType.Move);
-        }
-        else if (keyboard.xKey.wasPressedThisFrame)
-        {
-            SelectCommand(CommandType.Guard);
-        }
-        else if (keyboard.cKey.wasPressedThisFrame)
-        {
-            SelectCommand(CommandType.AttackMove);
-        }
-        else if (keyboard.vKey.wasPressedThisFrame)
-        {
-            SelectCommand(CommandType.Patrol);
-        }
-        else if (keyboard.bKey.wasPressedThisFrame)
-        {
-            ExecuteHoldCommand();
-        }
-        else if (keyboard.nKey.wasPressedThisFrame) // CHANGED: H for Hold Position
-        {
-            ExecuteStopCommand();
-           
-        }
+        if (keyboard.zKey.wasPressedThisFrame) SelectCommand(CommandType.Move);
+        else if (keyboard.xKey.wasPressedThisFrame) SelectCommand(CommandType.Guard);
+        else if (keyboard.cKey.wasPressedThisFrame) SelectCommand(CommandType.AttackMove);
+        else if (keyboard.vKey.wasPressedThisFrame) SelectCommand(CommandType.Patrol);
+        else if (keyboard.bKey.wasPressedThisFrame) ExecuteHoldCommand();
+        else if (keyboard.nKey.wasPressedThisFrame) ExecuteStopCommand();
+        else if (keyboard.digit1Key.wasPressedThisFrame) SelectCommand(CommandType.Ability1);
+        else if (keyboard.digit2Key.wasPressedThisFrame) SelectCommand(CommandType.Ability2);
+        else if (keyboard.digit3Key.wasPressedThisFrame) SelectCommand(CommandType.Ability3);
+        else if (keyboard.digit4Key.wasPressedThisFrame) SelectCommand(CommandType.Ability4);
     }
 
     bool IsValidEnemyTarget(GameObject target, List<GameObject> selectedUnits)
     {
         if (target == null) return false;
-
-        // Must have a Unit component
         Unit targetUnit = target.GetComponent<Unit>();
         if (targetUnit == null || !targetUnit.IsAlive()) return false;
 
-        // Check if any selected unit can attack this target (different teams)
         foreach (GameObject selectedUnit in selectedUnits)
         {
-            if (selectedUnit != null)
-            {
-                string selectedTag = selectedUnit.tag;
-                string targetTag = target.tag;
-
-                // Player units can target Enemy units
-                if (selectedTag == "Player" && targetTag == "Enemy")
-                    return true;
-            }
+            if (selectedUnit.tag == "Player" && target.tag == "Enemy")
+                return true;
         }
-
         return false;
     }
 
     void ExecuteStopCommand()
     {
-        List<GameObject> selectedUnits = UnitSelectionManager.Instance?.unitsSelected;
-
-        if (selectedUnits != null && selectedUnits.Count > 0)
+        foreach (GameObject unitObj in UnitSelectionManager.Instance?.unitsSelected ?? new List<GameObject>())
         {
-            foreach (GameObject unitObj in selectedUnits)
-            {
-                if (unitObj != null)
-                {
-                    var stopCommand = new StopCommand(unitObj);
-
-                    // Queue command if paused, execute immediately if not
-                    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-                    {
-                        CommandQueue.Instance.QueueCommand(stopCommand);
-                    }
-                    else
-                    {
-                        stopCommand.Execute();
-                    }
-                }
-            }
+            var stopCommand = new StopCommand(unitObj);
+            ExecuteOrQueueCommand(stopCommand);
         }
-
-        // Return to Move command after stopping
         SelectCommand(CommandType.Move);
     }
 
-    // NEW: Execute Hold Command
     void ExecuteHoldCommand()
     {
-        List<GameObject> selectedUnits = UnitSelectionManager.Instance?.unitsSelected;
-
-        if (selectedUnits != null && selectedUnits.Count > 0)
+        foreach (GameObject unitObj in UnitSelectionManager.Instance?.unitsSelected ?? new List<GameObject>())
         {
-            foreach (GameObject unitObj in selectedUnits)
-            {
-                if (unitObj != null)
-                {
-                    var holdCommand = new HoldCommand(unitObj);
-
-                    // Queue command if paused, execute immediately if not
-                    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-                    {
-                        CommandQueue.Instance.QueueCommand(holdCommand);
-                    }
-                    else
-                    {
-                        holdCommand.Execute();
-                    }
-                }
-            }
+            var holdCommand = new HoldCommand(unitObj);
+            ExecuteOrQueueCommand(holdCommand);
         }
-
-        // Stay in Hold command mode (or return to Move if you prefer)
         SelectCommand(CommandType.Move);
-    }
-
-    void CreateGuardAreaIndicator()
-    {
-        // Create preview indicator (different from unit's persistent circles)
-        guardAreaIndicator = new GameObject("GuardAreaPreview");
-        guardAreaIndicator.SetActive(false);
-
-        guardCircleRenderer = guardAreaIndicator.AddComponent<LineRenderer>();
-        guardCircleRenderer.material = new Material(Shader.Find("Sprites/Default"));
-
-        // Make preview more visible/different color
-        guardCircleRenderer.startColor = new Color(1f, 1f, 0f, 0.6f); // Yellow for preview
-        guardCircleRenderer.endColor = new Color(1f, 1f, 0f, 0.6f);
-        guardCircleRenderer.startWidth = 0.25f; // Slightly thicker for preview
-        guardCircleRenderer.endWidth = 0.25f;
-        guardCircleRenderer.useWorldSpace = true;
-
-        // Create circle points
-        int segments = 64;
-        guardCircleRenderer.positionCount = segments + 1;
-
-        float angle = 0f;
-        for (int i = 0; i <= segments; i++)
-        {
-            float x = Mathf.Sin(angle * Mathf.Deg2Rad) * guardAreaRadius;
-            float z = Mathf.Cos(angle * Mathf.Deg2Rad) * guardAreaRadius;
-            guardCircleRenderer.SetPosition(i, new Vector3(x, 0.1f, z)); // Slightly above ground
-            angle += 360f / segments;
-        }
-    }
-
-    void ShowGuardAreaPreview()
-    {
-        if (guardAreaIndicator != null)
-        {
-            Vector3 mousePos = GetMouseWorldPosition();
-            guardAreaIndicator.transform.position = mousePos;
-            guardAreaIndicator.SetActive(true);
-
-            // Update circle to be at mouse position
-            int segments = guardCircleRenderer.positionCount - 1;
-            float angle = 0f;
-            for (int i = 0; i <= segments; i++)
-            {
-                float x = Mathf.Sin(angle * Mathf.Deg2Rad) * guardAreaRadius;
-                float z = Mathf.Cos(angle * Mathf.Deg2Rad) * guardAreaRadius;
-                guardCircleRenderer.SetPosition(i, mousePos + new Vector3(x, 0.1f, z));
-                angle += 360f / segments;
-            }
-        }
-    }
-
-    void HideGuardAreaPreview()
-    {
-        if (guardAreaIndicator != null)
-        {
-            guardAreaIndicator.SetActive(false);
-        }
     }
 
     void SelectCommand(CommandType command)
@@ -328,33 +193,30 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
 
     void UpdateButtonVisuals()
     {
-        // Reset all buttons to normal color
-        moveButton.GetComponent<Image>().color = normalColor;
-        guardButton.GetComponent<Image>().color = normalColor;
-        attackMoveButton.GetComponent<Image>().color = normalColor;
-        patrolButton.GetComponent<Image>().color = normalColor;
-        stopMovementButton.GetComponent<Image>().color = normalColor;
-        holdPositionButton.GetComponent<Image>().color = normalColor;
+        // reset
+        moveButton.image.color = normalColor;
+        guardButton.image.color = normalColor;
+        attackMoveButton.image.color = normalColor;
+        patrolButton.image.color = normalColor;
+        stopMovementButton.image.color = normalColor;
+        holdPositionButton.image.color = normalColor;
+        abilityButton1.image.color = normalColor;
+        abilityButton2.image.color = normalColor;
+        abilityButton3.image.color = normalColor;
+        abilityButton4.image.color = normalColor;
 
-
-        // Highlight selected command
+        // highlight
         switch (currentCommand)
         {
-            case CommandType.Move:
-                moveButton.GetComponent<Image>().color = selectedColor;
-                break;
-            case CommandType.Guard:
-                guardButton.GetComponent<Image>().color = selectedColor;
-                break;
-            case CommandType.AttackMove:
-                attackMoveButton.GetComponent<Image>().color = selectedColor;
-                break;
-            case CommandType.Patrol:
-                patrolButton.GetComponent<Image>().color = selectedColor;
-                break;
-            case CommandType.Hold:
-                holdPositionButton.GetComponent<Image>().color = selectedColor;
-                break;
+            case CommandType.Move: moveButton.image.color = selectedColor; break;
+            case CommandType.Guard: guardButton.image.color = selectedColor; break;
+            case CommandType.AttackMove: attackMoveButton.image.color = selectedColor; break;
+            case CommandType.Patrol: patrolButton.image.color = selectedColor; break;
+            case CommandType.Hold: holdPositionButton.image.color = selectedColor; break;
+            case CommandType.Ability1: abilityButton1.image.color = selectedColor; break;
+            case CommandType.Ability2: abilityButton2.image.color = selectedColor; break;
+            case CommandType.Ability3: abilityButton3.image.color = selectedColor; break;
+            case CommandType.Ability4: abilityButton4.image.color = selectedColor; break;
         }
     }
 
@@ -362,63 +224,73 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     {
         foreach (GameObject unitObj in selectedUnits)
         {
-            if (unitObj != null)
+            if (unitObj == null) continue;
+            ICommand command = null;
+
+            switch (currentCommand)
             {
-                ICommand command = null;
+                case CommandType.Move:
+                    command = new MoveCommand(unitObj, targetPosition);
+                    break;
+                case CommandType.Guard:
+                    command = new GuardCommand(unitObj, targetPosition, guardAreaDisplay.guardAreaRadius);
+                    break;
+                case CommandType.AttackMove:
+                    command = new AttackMoveCommand(unitObj, targetPosition);
+                    break;
+                case CommandType.Patrol:
+                    command = new PatrolCommand(unitObj, targetPosition);
+                    break;
+                case CommandType.Hold:
+                    command = new HoldCommand(unitObj);
+                    break;
 
-                switch (currentCommand)
-                {
-                    case CommandType.Move:
-                        command = new MoveCommand(unitObj, targetPosition);
-                        break;
-                    case CommandType.Guard:
-                        command = new GuardCommand(unitObj, targetPosition, guardAreaRadius);
-                        break;
-                    case CommandType.AttackMove:
-                        command = new AttackMoveCommand(unitObj, targetPosition);
-                        break;
-                    case CommandType.Patrol:
-                        command = new PatrolCommand(unitObj, targetPosition);
-                        break;
-                    case CommandType.Hold:
-                       
-                        command = new HoldCommand(unitObj);
-                        break;
-                }
+                case CommandType.Ability1:
+                case CommandType.Ability2:
+                case CommandType.Ability3:
+                case CommandType.Ability4:
+                    int slotIndex = (int)currentCommand - (int)CommandType.Ability1;
+                    var unitAbilities = unitObj.GetComponent<UnitAbilities>();
+                    var ability = unitAbilities?.GetAbility(slotIndex);
 
-                if (command != null)
-                {
-                    // Queue command if paused, execute immediately if not
-                    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+                    if (ability != null && ability.CanUse(unitObj))
                     {
-                        CommandQueue.Instance.QueueCommand(command);
+                        if (ability.TargetType == TargetType.None || ability.TargetType == TargetType.Self)
+                        {
+                            ability.StartCast(unitObj, unitObj.transform.position, unitObj);
+                            ability.Execute(unitObj, unitObj.transform.position, unitObj);
+                        }
+                        else
+                        {
+                            pendingAbility = ability;
+                            pendingCaster = unitObj;
+                            isAwaitingTarget = true;
+                        }
                     }
-                    else
-                    {
-                        command.Execute();
-                    }
-                }
+                    break;
             }
+
+            if (command != null) ExecuteOrQueueCommand(command);
         }
+    }
+
+    void ExecuteOrQueueCommand(ICommand command)
+    {
+        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+            CommandQueue.Instance.QueueCommand(command);
+        else
+            command.Execute();
     }
 
     Vector3 GetMouseWorldPosition()
     {
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit))
-        {
+        if (Physics.Raycast(ray, out RaycastHit hit))
             return hit.point;
-        }
 
-        // Fallback: project onto a ground plane at y=0
         Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-        float distance;
-        if (groundPlane.Raycast(ray, out distance))
-        {
+        if (groundPlane.Raycast(ray, out float distance))
             return ray.GetPoint(distance);
-        }
 
         return Vector3.zero;
     }
