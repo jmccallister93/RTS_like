@@ -451,8 +451,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5216b0b043d1d74080f27b06fbafeb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MoveToDisplay
-  lineColor: {r: 0, g: 1, b: 0, a: 1}
+  moveColor: {r: 0, g: 1, b: 0, a: 1}
+  guardColor: {r: 0, g: 0, b: 1, a: 1}
+  patrolColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  attackMoveColor: {r: 1, g: 0, b: 0, a: 1}
+  followEnemyColor: {r: 1, g: 0, b: 0, a: 1}
   lineWidth: 0.1
+  showDestinationIcon: 1
+  iconSize: 0.5
+  moveIconType: 1
+  enemyIconType: 0
 --- !u!4 &198126268
 Transform:
   m_ObjectHideFlags: 0
@@ -5803,25 +5811,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: eb9017e9c95a38143b059cb987436e26, type: 3}
---- !u!1 &1901716697 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
-  m_PrefabInstance: {fileID: 2678732522778468128}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1901716709
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1901716697}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5216b0b043d1d74080f27b06fbafeb1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MoveToDisplay
-  lineColor: {r: 0, g: 1, b: 0, a: 1}
-  lineWidth: 0.1
 --- !u!1 &1912377609
 GameObject:
   m_ObjectHideFlags: 0
@@ -6505,6 +6494,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 256743361347747286, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: iconSize
+      value: 1.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 256743361347747286, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: moveIconType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 256743361347747286, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: enemyIconType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 256743361347747286, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: showDestinationIcon
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1160583335199353825, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_Camera
       value: 
@@ -6564,10 +6569,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1901716709}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
