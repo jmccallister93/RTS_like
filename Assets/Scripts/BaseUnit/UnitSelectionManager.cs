@@ -14,6 +14,14 @@ public class UnitSelectionManager : MonoBehaviour
     public List<GameObject> allUnitsList = new List<GameObject>();
     public List<GameObject> unitsSelected = new List<GameObject>();
 
+    [Header("Selection Circle Settings")]
+    public Color selectionCircleColor = Color.green;
+    public float selectionCircleRadius = 0.5f;
+    public float selectionCircleWidth = 0.15f;
+
+    // Dictionary to track selection circles for each unit
+    private Dictionary<GameObject, LineRenderer> unitSelectionCircles = new Dictionary<GameObject, LineRenderer>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -81,8 +89,6 @@ public class UnitSelectionManager : MonoBehaviour
             }
         }
 
-        
-
         if (unitsSelected.Count > 0 && AtleastOneOffensiveUnit(unitsSelected))
         {
             Vector2 mousePosition = mouse.position.ReadValue();
@@ -148,18 +154,27 @@ public class UnitSelectionManager : MonoBehaviour
         return false;
     }
 
-    //private bool CanSelectUnit(GameObject unit)
-    //{
-    //    // Only allow selection of units with "Player" tag
-    //    return unit != null && unit.CompareTag("Player");
-    //}
-
-
     // Clean up any null references from destroyed units
     private void CleanupNullUnits()
     {
         unitsSelected.RemoveAll(unit => unit == null);
         allUnitsList.RemoveAll(unit => unit == null);
+
+        // Clean up selection circles for destroyed units
+        var keysToRemove = new List<GameObject>();
+        foreach (var kvp in unitSelectionCircles)
+        {
+            if (kvp.Key == null)
+            {
+                if (kvp.Value != null)
+                    Destroy(kvp.Value.gameObject);
+                keysToRemove.Add(kvp.Key);
+            }
+        }
+        foreach (var key in keysToRemove)
+        {
+            unitSelectionCircles.Remove(key);
+        }
     }
 
     // Public method to remove a unit from selection (called when unit is destroyed)
@@ -173,6 +188,9 @@ public class UnitSelectionManager : MonoBehaviour
         {
             allUnitsList.Remove(unit);
         }
+
+        // Remove selection circle
+        RemoveSelectionCircle(unit);
     }
 
     private bool AtleastOneOffensiveUnit(List<GameObject> unitsSelected)
@@ -189,13 +207,10 @@ public class UnitSelectionManager : MonoBehaviour
 
     private void MultiSelect(GameObject unit)
     {
-
-        //if (!CanSelectUnit(unit)) return;
-
         if (unitsSelected.Contains(unit))
         {
             unitsSelected.Remove(unit);
-            SelectUnit(unit, false); // Fixed: was calling EnableUnitMovement instead of SelectUnit
+            SelectUnit(unit, false);
         }
         else
         {
@@ -226,11 +241,9 @@ public class UnitSelectionManager : MonoBehaviour
 
     private void SelectByClicking(GameObject unit)
     {
-            DeselectAll();
-            unitsSelected.Add(unit);
-            SelectUnit(unit, true);
-      
-        
+        DeselectAll();
+        unitsSelected.Add(unit);
+        SelectUnit(unit, true);
     }
 
     private void EnableUnitMovement(GameObject unit, bool shouldMove)
@@ -253,12 +266,66 @@ public class UnitSelectionManager : MonoBehaviour
         }
     }
 
+    private void CreateSelectionCircle(GameObject unit)
+    {
+        if (unit == null || unitSelectionCircles.ContainsKey(unit))
+            return;
+
+        GameObject circleObj = new GameObject("SelectionCircle");
+        circleObj.transform.SetParent(unit.transform);
+        circleObj.transform.localPosition = Vector3.zero;
+
+        LineRenderer circleRenderer = circleObj.AddComponent<LineRenderer>();
+        circleRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        circleRenderer.startColor = selectionCircleColor;
+        circleRenderer.endColor = selectionCircleColor;
+        circleRenderer.startWidth = selectionCircleWidth;
+        circleRenderer.endWidth = selectionCircleWidth;
+        circleRenderer.useWorldSpace = false;
+
+        // Create circle points
+        int segments = 32; // More segments for smoother circle
+        circleRenderer.positionCount = segments + 1;
+
+        float angle = 0f;
+        for (int i = 0; i <= segments; i++)
+        {
+            float x = Mathf.Sin(angle * Mathf.Deg2Rad) * selectionCircleRadius;
+            float z = Mathf.Cos(angle * Mathf.Deg2Rad) * selectionCircleRadius;
+            circleRenderer.SetPosition(i, new Vector3(x, 0.05f, z)); // Slightly above ground
+            angle += 360f / segments;
+        }
+
+        unitSelectionCircles[unit] = circleRenderer;
+    }
+
+    private void RemoveSelectionCircle(GameObject unit)
+    {
+        if (unitSelectionCircles.ContainsKey(unit))
+        {
+            if (unitSelectionCircles[unit] != null)
+            {
+                Destroy(unitSelectionCircles[unit].gameObject);
+            }
+            unitSelectionCircles.Remove(unit);
+        }
+    }
+
     private void SelectUnit(GameObject unit, bool isSelected)
     {
         if (unit != null)
         {
             TriggerSelectionIndicator(unit, isSelected);
-            //EnableUnitMovement(unit, isSelected);
+
+            // Handle selection circle
+            if (isSelected)
+            {
+                CreateSelectionCircle(unit);
+            }
+            else
+            {
+                RemoveSelectionCircle(unit);
+            }
 
             // Notify guard area display
             GuardAreaDisplay guardDisplay = unit.GetComponent<GuardAreaDisplay>();
@@ -271,14 +338,11 @@ public class UnitSelectionManager : MonoBehaviour
             {
                 moveDisplay.SetSelected(isSelected);
             }
-
         }
     }
 
     internal void DragSelect(GameObject unit)
     {
-        //if (!CanSelectUnit(unit)) return;
-
         if (unit != null && !unitsSelected.Contains(unit))
         {
             unitsSelected.Add(unit);
