@@ -17,6 +17,10 @@ public class UnitMovement : MonoBehaviour, IPausable
     public LayerMask ground = 1;
     public float raycastDistance = 100f;
 
+    [Header("Rotation Settings")]
+    public bool enableInstantTurning = true;
+    public float minVelocityForTurning = 0.1f; // Minimum velocity to trigger turning
+
     private NavMeshAgent agent;
     public bool isCommandedtoMove;
     public MovementMode currentMode = MovementMode.None;
@@ -38,18 +42,30 @@ public class UnitMovement : MonoBehaviour, IPausable
     {
         agent = GetComponent<NavMeshAgent>();
         unitAnimator = GetComponent<Animator>();
-    }
 
+        // Disable NavMeshAgent's built-in rotation since we'll handle it manually
+        if (agent != null && enableInstantTurning)
+        {
+            agent.updateRotation = false;
+        }
+    }
 
     private void Update()
     {
         if (isCommandedtoMove && agent != null)
         {
+            // Handle instant turning to face movement direction
+            if (enableInstantTurning)
+            {
+                HandleInstantTurning();
+            }
+
             // NEW: Don't continue patrol automatically if interrupted by combat
             if (currentMode == MovementMode.Patrol && patrolInterruptedByCombat)
             {
                 return; // Wait for combat to end before resuming patrol
             }
+
             if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance)
             {
                 if (currentMode == MovementMode.Patrol)
@@ -63,15 +79,40 @@ public class UnitMovement : MonoBehaviour, IPausable
                     isCommandedtoMove = false;
                     currentMode = MovementMode.None;
 
-                    
-              
-
                     // Notify animator that movement is complete
                     if (unitAnimator != null)
                     {
                         unitAnimator.SetBool("isMoving", false);
                     }
                 }
+            }
+        }
+    }
+
+    private void HandleInstantTurning()
+    {
+        if (agent == null || !agent.isOnNavMesh) return;
+
+        // Use desiredVelocity for more consistent direction, fallback to velocity
+        Vector3 movementDirection = agent.desiredVelocity;
+        if (movementDirection.magnitude < minVelocityForTurning)
+        {
+            movementDirection = agent.velocity;
+        }
+
+        // Only rotate if we have significant movement
+        if (movementDirection.magnitude > minVelocityForTurning)
+        {
+            // Flatten the movement direction (remove Y component for ground-based units)
+            movementDirection.y = 0;
+
+            if (movementDirection != Vector3.zero)
+            {
+                // Calculate the rotation to face the movement direction
+                Quaternion targetRotation = Quaternion.LookRotation(movementDirection);
+
+                // Apply the rotation instantly
+                transform.rotation = targetRotation;
             }
         }
     }
@@ -123,6 +164,17 @@ public class UnitMovement : MonoBehaviour, IPausable
             {
                 unitAnimator.SetBool("isMoving", true);
             }
+
+            // Optional: Immediately face the target direction
+            if (enableInstantTurning)
+            {
+                Vector3 initialDirection = (navHit.position - transform.position).normalized;
+                initialDirection.y = 0;
+                if (initialDirection != Vector3.zero)
+                {
+                    transform.rotation = Quaternion.LookRotation(initialDirection);
+                }
+            }
         }
     }
 
@@ -143,8 +195,6 @@ public class UnitMovement : MonoBehaviour, IPausable
             isCommandedtoMove = false;
             currentMode = MovementMode.None;
         }
-
-  
     }
 
     public bool IsMoving()
