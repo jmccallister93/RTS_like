@@ -38,6 +38,9 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     [Header("Guard Area")]
     public GuardAreaDisplay guardAreaDisplay;
 
+    [Header("Move Display")]
+    public MoveToDisplay moveToDisplay;
+
     // For pending ability casts
     private AbilitySO pendingAbility;
     private GameObject pendingCaster;
@@ -66,6 +69,7 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
 
         SelectCommand(CommandType.Move);
         guardAreaDisplay.CreateGuardAreaIndicator();
+       
     }
 
     void Update()

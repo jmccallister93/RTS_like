@@ -266,6 +266,12 @@ public class UnitSelectionManager : MonoBehaviour
             {
                 guardDisplay.SetSelected(isSelected);
             }
+            MoveToDisplay moveDisplay = unit.GetComponent<MoveToDisplay>();
+            if (moveDisplay != null)
+            {
+                moveDisplay.SetSelected(isSelected);
+            }
+
         }
     }
 

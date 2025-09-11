@@ -61,7 +61,10 @@ public class UnitMovement : MonoBehaviour, IPausable
                 else
                 {
                     isCommandedtoMove = false;
-                    currentMode = MovementMode.None; // This is important!
+                    currentMode = MovementMode.None;
+
+                    
+              
 
                     // Notify animator that movement is complete
                     if (unitAnimator != null)
@@ -140,6 +143,8 @@ public class UnitMovement : MonoBehaviour, IPausable
             isCommandedtoMove = false;
             currentMode = MovementMode.None;
         }
+
+  
     }
 
     public bool IsMoving()

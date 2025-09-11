@@ -55,6 +55,11 @@ public class Unit : MonoBehaviour
         {
             guardAreaDisplay = gameObject.AddComponent<GuardAreaDisplay>();
         }
+        MoveToDisplay moveDisplay = GetComponent<MoveToDisplay>();
+        if (moveDisplay == null)
+        {
+            moveDisplay = gameObject.AddComponent<MoveToDisplay>();
+        }
     }
 
     private void OnDestroy()

@@ -81,6 +81,7 @@ public class MoveCommand : ICommand
             if (unitComponent != null)
             {
                 unitComponent.MoveTo(targetPosition);
+               
             }
         }
     }
