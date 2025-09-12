@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Unit : MonoBehaviour
 {
@@ -11,7 +12,11 @@ public class Unit : MonoBehaviour
     [SerializeField] private HealthTracker healthBar;
 
     [Header("Death Settings")]
-    [SerializeField] private float corpseLifetime = 10f; // How long the corpse stays before being destroyed
+    [SerializeField] private float corpseLifetime = 10f;
+
+    [Header("Damage Text")]
+    [SerializeField] private GameObject floatingDamageTextPrefab;
+    [SerializeField] private Transform floatingTextSpawnPoint;
 
     private UnitMovement unitMovement;
     private AttackController attackController;
@@ -73,22 +78,35 @@ public class Unit : MonoBehaviour
 
     public void TakeDamage(float damageAmount)
     {
-        if (isDead) return; // Can't damage dead units
+        if (isDead) return;
 
         currentHealth -= damageAmount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
-        // Update health bar
         if (healthBar != null)
-        {
             healthBar.UpdateSliderValue(currentHealth, maxHealth);
+
+        // Spawn floating damage text
+        if (floatingDamageTextPrefab != null)
+        {
+            Vector3 spawnPos = floatingTextSpawnPoint != null
+                ? floatingTextSpawnPoint.position
+                : transform.position + Vector3.up * 2f;
+
+            // Slight random horizontal jitter so multiple hits don’t overlap perfectly
+            spawnPos += new Vector3(Random.Range(-0.2f, 0.2f), 0f, Random.Range(-0.2f, 0.2f));
+
+            GameObject textObj = Instantiate(floatingDamageTextPrefab, spawnPos, Quaternion.identity);
+            var fdt = textObj.GetComponent<FloatingDamageText>();
+            if (fdt != null)
+            {
+                // You can pass a color override (e.g., Color.yellow for crits)
+                fdt.Initialize(damageAmount);
+            }
         }
 
-        // Check if unit died
         if (currentHealth <= 0)
-        {
             Die();
-        }
 
         Debug.Log($"{gameObject.name} took {damageAmount} damage. Health: {currentHealth}/{maxHealth}");
     }
