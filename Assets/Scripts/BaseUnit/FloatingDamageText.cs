@@ -14,6 +14,7 @@ public class FloatingDamageText : MonoBehaviour
         textMesh = GetComponentInChildren<TextMeshProUGUI>();
         if (textMesh != null)
         {
+            //if(Unit)
             originalColor = textMesh.color;
         }
         else

@@ -343,11 +343,11 @@ GameObject:
   - component: {fileID: 6665392516466649474}
   - component: {fileID: 2857871542874756886}
   - component: {fileID: 6505679774542552150}
+  - component: {fileID: 2308565361275725158}
+  - component: {fileID: 1133211024751393437}
   - component: {fileID: 4490762081966064489}
   - component: {fileID: 1639268436421564568}
   - component: {fileID: 4617355042445406440}
-  - component: {fileID: 1133211024751393437}
-  - component: {fileID: 2308565361275725158}
   - component: {fileID: 477501147255151289}
   - component: {fileID: 256743361347747286}
   m_Layer: 7
@@ -420,6 +420,49 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!135 &2308565361275725158
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!95 &1133211024751393437
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: 99035c20d0664b741822b878ae30d109, type: 3}
+  m_Controller: {fileID: 9100000, guid: 5a08a0d7e5b5e224eb51d5a56476a5a5, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &4490762081966064489
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -481,49 +524,6 @@ MonoBehaviour:
   detectionRange: 10
   maxAttackRange: 2.5
   showDebugLogs: 1
---- !u!95 &1133211024751393437
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2554461699235619137}
-  m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: 99035c20d0664b741822b878ae30d109, type: 3}
-  m_Controller: {fileID: 9100000, guid: 5a08a0d7e5b5e224eb51d5a56476a5a5, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
---- !u!135 &2308565361275725158
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2554461699235619137}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 10
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &477501147255151289
 MonoBehaviour:
   m_ObjectHideFlags: 0
