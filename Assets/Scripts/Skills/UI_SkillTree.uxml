@@ -1,0 +1,8 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/Skills/SkillStyleSheet.uss?fileID=7433441132597879392&amp;guid=7718041576eaa9445bf7186d766ce0b7&amp;type=3#SkillStyleSheet" />
+    <ui:VisualElement name="MainPanel" style="flex-grow: 1; flex-direction: row; background-color: rgb(36, 36, 36);">
+        <ui:VisualElement name="StatPanel" class="StatPanel" style="flex-grow: 1; background-color: rgb(47, 47, 47); border-left-width: 0;" />
+        <ui:VisualElement name="SkillTree" style="flex-grow: 1;" />
+        <ui:VisualElement name="SkillDescription" class="StatPanel" style="border-right-width: 0;" />
+    </ui:VisualElement>
+</ui:UXML>
