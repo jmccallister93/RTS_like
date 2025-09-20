@@ -32,12 +32,12 @@ namespace _Scripts.SkillSystem
 
         private void Awake()
         {
-            _strength = 1;
-            _dexterity = 1;
-            _intelligence = 1;
-            _wisdom = 1;
-            _constitution = 1;
-            _charisma = 1;
+            _strength = 10;
+            _dexterity = 10;
+            _intelligence = 10;
+            _wisdom = 10;
+            _constitution = 10;
+            _charisma = 10;
             _doubleJump = 0;
             _dash = 0;
             _teleport = 0;

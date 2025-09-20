@@ -2,7 +2,7 @@
 }
 
 .StatPanel {
-    flex-grow: 1;
+    flex-grow: 0;
     background-color: rgb(47, 47, 47);
     border-left-color: rgb(255, 255, 255);
     border-right-color: rgb(255, 255, 255);
@@ -12,4 +12,29 @@
     border-right-width: 1px;
     border-bottom-width: 0;
     border-left-width: 1px;
+    width: 25%;
+}
+
+.HeaderLabel {
+    font-size: 36px;
+}
+
+.skill-button {
+    width: 128px;
+    height: 128px;
+    border-radius: 5px;
+}
+
+.skill-button:hover {
+    border-color: ;
+    border-width: 5px;
+}
+
+.skill-button:disabled {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-width: 0;
+}
+
+.skill-row {
+    flex-grow: 1;
 }
