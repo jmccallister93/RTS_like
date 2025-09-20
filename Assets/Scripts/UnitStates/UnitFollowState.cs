@@ -7,7 +7,8 @@ public class UnitFollowState : StateMachineBehaviour
     private NavMeshAgent agent;
     private UnitMovement unitMovement;
 
-    public float attackingDistance = 1.5f;
+    //Get attack range from AttackController
+    private float attackingDistance;
     private bool hasSetDestination = false;
     private float originalStoppingDistance;
 
@@ -24,17 +25,18 @@ public class UnitFollowState : StateMachineBehaviour
         hasSetDestination = false;
         wasPausedInThisState = false;
 
-        if (attackController != null) attackController.SetFollowStateMaterial();
+        if (attackController != null)
+        {
+            attackingDistance = attackController.attackRange;
+        }
 
         if (agent != null)
         {
             originalStoppingDistance = agent.stoppingDistance;
-            agent.stoppingDistance = attackingDistance * 0.5f;
+            agent.stoppingDistance = attackingDistance;
             agent.enabled = true;
             agent.isStopped = false;
         }
-
-        Debug.Log($"{animator.name} entered Follow state");
     }
 
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
@@ -51,7 +53,7 @@ public class UnitFollowState : StateMachineBehaviour
         else if (wasPausedInThisState)
         {
             wasPausedInThisState = false;
-            hasSetDestination = false; // force re-evaluate
+            hasSetDestination = false; 
         }
 
         // PRIORITY 1: Check for ability usage
@@ -65,7 +67,7 @@ public class UnitFollowState : StateMachineBehaviour
             return; // Let animator transition to AbilityState
         }
 
-        // PRIORITY 1: Check if player is commanding movement - override AI
+        // PRIORITY 2: Check if player is commanding movement - override AI
         if (unitMovement != null && unitMovement.isCommandedtoMove)
         {
             Debug.Log($"{animator.name} player commanding movement from Follow - transitioning to Moving");
@@ -102,6 +104,7 @@ public class UnitFollowState : StateMachineBehaviour
         float distance = Vector3.Distance(animator.transform.position, attackController.targetToAttack.position);
         if (distance <= attackingDistance)
         {
+            Debug.Log($"{animator.name} in attack range of {attackController.targetToAttack.name}, switching to Attack state");
             if (agent != null)
             {
                 agent.isStopped = true;

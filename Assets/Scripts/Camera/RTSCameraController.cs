@@ -35,7 +35,7 @@ public class RTSCameraController : MonoBehaviour
     [SerializeField] float mouseWheelZoomSpeed = 2f;  // Per scroll step
     [SerializeField] float zoomSmoothSpeed = 5f;      // How fast it smooths to target zoom
     [SerializeField] float minZoomY = 5f;  // Minimum height/zoom level
-    [SerializeField] float maxZoomY = 50f; // Maximum height/zoom level
+    [SerializeField] float maxZoomY = 100f; // Maximum height/zoom level
     [SerializeField] bool useMouseWheelZoom = true;
 
     private float targetZoomY;      // Target zoom level to smoothly move towards

@@ -6,8 +6,8 @@ public class UnitAttackState : StateMachineBehaviour
     AttackController attackController;
     NavMeshAgent agent;
     UnitMovement unitMovement;
-    public float attackingDistance = 1.5f;
-    public float exitAttackDistance = 2.0f;
+
+    // Remove hardcoded distances - we'll get these from AttackController
     public float attackCooldown = 1.0f;
     private float lastAttackTime;
 
@@ -17,15 +17,11 @@ public class UnitAttackState : StateMachineBehaviour
 
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
+        // Get components FIRST
         attackController = animator.transform.GetComponent<AttackController>();
         agent = animator.transform.GetComponent<NavMeshAgent>();
         unitMovement = animator.transform.GetComponent<UnitMovement>();
         wasPausedInThisState = false;
-
-        if (attackController != null)
-        {
-            attackController.SetAttackStateMaterial();
-        }
 
         // Stop the NavMeshAgent during attack
         if (agent != null)
@@ -120,8 +116,12 @@ public class UnitAttackState : StateMachineBehaviour
             return;
         }
 
-        // PRIORITY 5: Check distance - too far to attack
+        // PRIORITY 5: Check distance using AttackController's range settings
         float distanceFromTarget = Vector3.Distance(animator.transform.position, attackController.targetToAttack.position);
+
+        // Get attack range from AttackController (this is the key fix!)
+        float attackRange = attackController.attackRange;
+        float exitAttackDistance = attackRange + 0.5f; // Small buffer to prevent oscillation
 
         if (distanceFromTarget > exitAttackDistance)
         {
@@ -131,19 +131,34 @@ public class UnitAttackState : StateMachineBehaviour
             return;
         }
 
-        // PRIORITY 6: We're good to attack - look at target and attack
-        Vector3 lookDirection = (attackController.targetToAttack.position - animator.transform.position).normalized;
-        lookDirection.y = 0;
-        if (lookDirection != Vector3.zero)
+        // PRIORITY 6: Check if we're close enough to attack
+        if (distanceFromTarget <= attackRange)
         {
-            animator.transform.rotation = Quaternion.LookRotation(lookDirection);
-        }
+            // We're in range - look at target and attack
+            Vector3 lookDirection = (attackController.targetToAttack.position - animator.transform.position).normalized;
+            lookDirection.y = 0;
+            if (lookDirection != Vector3.zero)
+            {
+                animator.transform.rotation = Quaternion.LookRotation(lookDirection);
+            }
 
-        // Attack with cooldown
-        if (Time.time - lastAttackTime >= attackCooldown)
+            // Attack with cooldown
+            if (Time.time - lastAttackTime >= attackCooldown)
+            {
+                PerformAttack(attackController.targetToAttack);
+                lastAttackTime = Time.time;
+            }
+        }
+        else
         {
-            PerformAttack(attackController.targetToAttack);
-            lastAttackTime = Time.time;
+            // We're too close for exit but too far for attack - this shouldn't happen much
+            // but if it does, just stay in attack state and look at target
+            Vector3 lookDirection = (attackController.targetToAttack.position - animator.transform.position).normalized;
+            lookDirection.y = 0;
+            if (lookDirection != Vector3.zero)
+            {
+                animator.transform.rotation = Quaternion.LookRotation(lookDirection);
+            }
         }
     }
 
@@ -159,21 +174,12 @@ public class UnitAttackState : StateMachineBehaviour
         Debug.Log($"{animator.name} exited Attack state");
     }
 
-    /// <summary>
-    /// Check for other enemies when current target dies
-    /// </summary>
+
     private bool CheckForOtherEnemies(Animator animator)
     {
         if (attackController == null) return false;
 
-        float detectionRange = 10f; // Default range
-
-        // Get detection range from sphere collider if available
-        SphereCollider sphereCollider = animator.GetComponent<SphereCollider>();
-        if (sphereCollider != null && sphereCollider.isTrigger)
-        {
-            detectionRange = sphereCollider.radius;
-        }
+        float detectionRange = attackController.detectionRange;
 
         // Find all colliders within detection range
         Collider[] nearbyColliders = Physics.OverlapSphere(animator.transform.position, detectionRange);
@@ -208,9 +214,7 @@ public class UnitAttackState : StateMachineBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Check if we should target this object
-    /// </summary>
+
     private bool ShouldTarget(GameObject potentialTarget, GameObject myUnit)
     {
         // Must have a Unit component and be alive
@@ -233,9 +237,7 @@ public class UnitAttackState : StateMachineBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Properly exit to idle state by clearing all animator bools
-    /// </summary>
+
     private void ExitToIdle(Animator animator)
     {
         animator.SetBool("isAttacking", false);
@@ -261,6 +263,6 @@ public class UnitAttackState : StateMachineBehaviour
             attackController.DealDamage(target);
         }
 
-        // Here you could add visual/audio effects
+
     }
 }

@@ -18,10 +18,6 @@ public class UnitIdleState : StateMachineBehaviour
         animator.SetBool("isFollowing", false);
         animator.SetBool("isAttacking", false);
 
-        if (attackController != null)
-        {
-            attackController.SetIdleStateMaterial();
-        }
 
         lastTargetCheck = Time.time;
         Debug.Log($"{animator.name} entered Idle state");

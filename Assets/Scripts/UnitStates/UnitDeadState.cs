@@ -62,18 +62,15 @@ public class UnitDeadState : StateMachineBehaviour
         {
             attackController.enabled = false;
 
-            // Set dead material if available
-            if (attackController.idleStateMaterial != null)
+            Renderer renderer = unit.GetComponent<Renderer>();
+            if (renderer != null)
             {
-                Renderer renderer = unit.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    // Make the dead unit darker/grayer
-                    Material deadMaterial = new Material(attackController.idleStateMaterial);
-                    deadMaterial.color = Color.gray;
-                    renderer.material = deadMaterial;
-                }
+                // Make the dead unit darker/grayer
+                Material deadMaterial = new Material(Shader.Find("Standard"));
+                deadMaterial.color = Color.gray;
+                renderer.material = deadMaterial;
             }
+            
         }
 
         // 5. Rotate the capsule 90 degrees to lay it on its side

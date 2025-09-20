@@ -20,11 +20,6 @@ public class UnitMovingState : StateMachineBehaviour
         // Reset target check timer
         lastTargetCheck = Time.time;
 
-        // Set the moving state material
-        if (attackController != null)
-        {
-            attackController.SetMovingStateMaterial();
-        }
 
         if (agent != null && unitMovement != null)
         {
