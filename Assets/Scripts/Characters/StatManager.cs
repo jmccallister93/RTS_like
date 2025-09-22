@@ -2,37 +2,52 @@ using UnityEngine;
 
 public class StatManager : MonoBehaviour
 {
-    // Damage stats
-    private int _strength, _dexterity, _mind;
-    // Defense stats
-    private int _constitution, _reflex, _willpower;
-    // Base stats
-    private int _vitality, _mobility, _focus;
+    private StatBlock baseStats = new StatBlock();
+    private StatBlock allocatedStats = new StatBlock();
 
     private int _statPoints;
-
     public int StatPoints => _statPoints;
-    public int Strength => _strength;
-    public int Dexterity => _dexterity;
-    public int Mind => _mind;
-    public int Constitution => _constitution;
-    public int Reflex => _reflex;
-    public int Willpower => _willpower;
-    public int Vitality => _vitality;
-    public int Mobility => _mobility;
-    public int Focus => _focus;
 
-    private void Awake()
+    // Total stats (base + allocated)
+    public int Strength => baseStats.strength + allocatedStats.strength;
+    public int Dexterity => baseStats.dexterity + allocatedStats.dexterity;
+    public int Mind => baseStats.mind + allocatedStats.mind;
+    public int Constitution => baseStats.constitution + allocatedStats.constitution;
+    public int Reflex => baseStats.reflex + allocatedStats.reflex;
+    public int Willpower => baseStats.willpower + allocatedStats.willpower;
+    public int Vitality => baseStats.vitality + allocatedStats.vitality;
+    public int Mobility => baseStats.mobility + allocatedStats.mobility;
+    public int Focus => baseStats.focus + allocatedStats.focus;
+
+    public void SetBaseStats(StatBlock stats)
     {
-        _strength = 1;
-        _dexterity = 1;
-        _mind = 1;
-        _constitution = 1;
-        _reflex = 1;
-        _willpower = 1;
-        _vitality = 1;
-        _mobility = 1;
-        _focus = 1;
+        baseStats = new StatBlock
+        {
+            strength = stats.strength,
+            dexterity = stats.dexterity,
+            mind = stats.mind,
+            constitution = stats.constitution,
+            reflex = stats.reflex,
+            willpower = stats.willpower,
+            vitality = stats.vitality,
+            mobility = stats.mobility,
+            focus = stats.focus
+        };
+        OnStatChanged?.Invoke();
+    }
+
+    public void AddBaseStats(StatBlock stats)
+    {
+        baseStats.strength += stats.strength;
+        baseStats.dexterity += stats.dexterity;
+        baseStats.mind += stats.mind;
+        baseStats.constitution += stats.constitution;
+        baseStats.reflex += stats.reflex;
+        baseStats.willpower += stats.willpower;
+        baseStats.vitality += stats.vitality;
+        baseStats.mobility += stats.mobility;
+        baseStats.focus += stats.focus;
+        OnStatChanged?.Invoke();
     }
 
     public void GainStatPoints(int amount)
@@ -41,59 +56,34 @@ public class StatManager : MonoBehaviour
         OnStatPointsChanged?.Invoke();
     }
 
-    public bool CanAffordStat(int cost)
-    {
-        return _statPoints >= cost;
-    }
+    public bool CanAffordStat(int cost) => _statPoints >= cost;
 
     public void IncreaseStat(string statName, int cost)
     {
         if (!CanAffordStat(cost)) return;
+
         switch (statName.ToLower())
         {
-            case "strength":
-                _strength++;
-                break;
-            case "dexterity":
-                _dexterity++;
-                break;
-            case "mind":
-                _mind++;
-                break;
-            case "constitution":
-                _constitution++;
-                break;
-            case "reflex":
-                _reflex++;
-                break;
-            case "willpower":
-                _willpower++;
-                break;
-            case "vitality":
-                _vitality++;
-                break;
-            case "mobility":
-                _mobility++;
-                break;
-            case "focus":
-                _focus++;
-                break;
+            case "strength": allocatedStats.strength++; break;
+            case "dexterity": allocatedStats.dexterity++; break;
+            case "mind": allocatedStats.mind++; break;
+            case "constitution": allocatedStats.constitution++; break;
+            case "reflex": allocatedStats.reflex++; break;
+            case "willpower": allocatedStats.willpower++; break;
+            case "vitality": allocatedStats.vitality++; break;
+            case "mobility": allocatedStats.mobility++; break;
+            case "focus": allocatedStats.focus++; break;
             default:
                 Debug.LogWarning($"Stat '{statName}' does not exist.");
                 return;
         }
+
         _statPoints -= cost;
         OnStatPointsChanged?.Invoke();
+        OnStatChanged?.Invoke();
     }
 
-    public delegate void StatPointsChangedAction();
-
-    public event StatPointsChangedAction OnStatPointsChanged;
-
-
-
-
-
-
-
+    // Events
+    public System.Action OnStatPointsChanged;
+    public System.Action OnStatChanged;
 }

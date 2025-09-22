@@ -165,7 +165,7 @@ public class UnitMovement : MonoBehaviour, IPausable
                 unitAnimator.SetBool("isMoving", true);
             }
 
-            // Optional: Immediately face the target direction
+            //  Immediately face the target direction
             if (enableInstantTurning)
             {
                 Vector3 initialDirection = (navHit.position - transform.position).normalized;

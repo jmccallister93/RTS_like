@@ -348,9 +348,7 @@ GameObject:
   - component: {fileID: 4490762081966064489}
   - component: {fileID: 1639268436421564568}
   - component: {fileID: 4617355042445406440}
-  - component: {fileID: 477501147255151289}
   - component: {fileID: 256743361347747286}
-  - component: {fileID: 5259501232468207073}
   m_Layer: 7
   m_Name: Unit
   m_TagString: Player
@@ -520,20 +518,6 @@ MonoBehaviour:
   attackRange: 2
   detectionRange: 2
   showDebugLogs: 1
---- !u!114 &477501147255151289
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2554461699235619137}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 77501def970f4e54a9b782fa2ca37f40, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnitAbilities
-  abilities:
-  - {fileID: 11400000, guid: 9e601e714da267e40bc8a01945b43ae0, type: 2}
 --- !u!114 &256743361347747286
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -556,18 +540,6 @@ MonoBehaviour:
   iconSize: 1.25
   moveIconType: 1
   enemyIconType: 1
---- !u!114 &5259501232468207073
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2554461699235619137}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b2b4e91be31e1349a6c68a3000c8ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::_Scripts.SkillSystem.PlayerSkillManager
 --- !u!1 &4523606610297031665
 GameObject:
   m_ObjectHideFlags: 0
