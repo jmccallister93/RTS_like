@@ -104,7 +104,7 @@ public class UnitFollowState : StateMachineBehaviour
         float distance = Vector3.Distance(animator.transform.position, attackController.targetToAttack.position);
         if (distance <= attackingDistance)
         {
-            Debug.Log($"{animator.name} in attack range of {attackController.targetToAttack.name}, switching to Attack state");
+            //Debug.Log($"{animator.name} in attack range of {attackController.targetToAttack.name}, switching to Attack state");
             if (agent != null)
             {
                 agent.isStopped = true;

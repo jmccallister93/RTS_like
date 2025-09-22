@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fd4eb9540f5c8b4b8ac98baa558f5ac, type: 3}
+  m_Name: HeavyStike
+  m_EditorClassIdentifier: Assembly-CSharp::HeavyStrikeSO
+  abilityName: New Ability
+  description: 
+  icon: {fileID: 21300000, guid: c712cbb4c50e47b48954c9dbe31ae839, type: 3}
+  cooldown: 5
+  castTime: 0.5
+  range: 10
+  targetType: 2
+  previewColor: {r: 0.9622642, g: 0.4339267, b: 0.4339267, a: 1}
+  lastCastTime: 9.874993
+  damageMultiplier: 2
+  rageCost: 0
+  stunDuration: 1

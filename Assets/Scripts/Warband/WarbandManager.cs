@@ -107,7 +107,7 @@ public class WarbandManager : MonoBehaviour, IRunWhenPaused
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             // Example: hook into your UnitSelectionManager
-            Debug.Log("Clicked world object: " + hit.collider.name);
+            //Debug.Log("Clicked world object: " + hit.collider.name);
         }
     }
 

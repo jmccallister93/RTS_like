@@ -311,6 +311,8 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     private void LoadDefaultAbilitiesForUnit(GameObject unit)
     {
+       
+
         // Clear current abilities
         for (int i = 0; i < abilitySlots.Length; i++)
         {
@@ -323,14 +325,27 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         var unitAbilities = unit.GetComponent<UnitAbilities>();
         if (unitAbilities != null)
         {
+            Debug.Log($"Found UnitAbilities with {unitAbilities.abilities.Length} slots");
             for (int i = 0; i < unitAbilities.abilities.Length && i < abilitySlots.Length; i++)
             {
                 if (unitAbilities.abilities[i] != null)
                 {
+                    Debug.Log($"Slot {i}: Loading {unitAbilities.abilities[i].Name}");
                     abilitySlots[i].ability = unitAbilities.abilities[i];
                     abilitySlots[i].state = AbilityState.Ready;
+
+                    // Force UI update to show icon immediately
+                    UpdateAbilitySlotUI(i);
+                }
+                else
+                {
+                    Debug.Log($"Slot {i}: Empty");
                 }
             }
+        }
+        else
+        {
+            Debug.LogError($"No UnitAbilities component on {unit.name}!");
         }
     }
 
@@ -390,28 +405,63 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     public bool TryUseAbility(int slotIndex)
     {
-        // Don't allow abilities if no single unit is selected
-        if (currentSelectedUnit == null) return false;
+        Debug.Log($"=== TryUseAbility({slotIndex}) called ===");
 
-        if (slotIndex < 0 || slotIndex >= abilitySlots.Length) return false;
+        // Don't allow abilities if no single unit is selected
+        if (currentSelectedUnit == null)
+        {
+            Debug.LogWarning("No unit selected!");
+            return false;
+        }
+
+        if (slotIndex < 0 || slotIndex >= abilitySlots.Length)
+        {
+            Debug.LogWarning($"Invalid slot index: {slotIndex}");
+            return false;
+        }
 
         var slot = abilitySlots[slotIndex];
-        if (slot.ability == null) return false;
+        if (slot.ability == null)
+        {
+            Debug.LogWarning($"No ability in slot {slotIndex}");
+            return false;
+        }
 
+        Debug.Log($"Found ability: {slot.ability.Name} in slot {slotIndex}");
         return TryUseAbility(slot.ability);
     }
 
     public bool TryUseAbility(IAbility ability)
     {
-        if (ability == null || currentSelectedUnit == null || !ability.CanUse(currentSelectedUnit)) return false;
+        Debug.Log($"=== TryUseAbility({ability.Name}) called ===");
+
+        if (ability == null)
+        {
+            Debug.LogError("Ability is null!");
+            return false;
+        }
+
+        if (currentSelectedUnit == null)
+        {
+            Debug.LogError("No selected unit!");
+            return false;
+        }
+
+        bool canUse = ability.CanUse(currentSelectedUnit);
+        Debug.Log($"CanUse result: {canUse}");
+
+        if (!canUse) return false;
 
         // Cancel any current targeting
         CancelTargeting();
+
+        Debug.Log($"Ability TargetType: {ability.TargetType}");
 
         // Handle different targeting types
         switch (ability.TargetType)
         {
             case TargetType.Self:
+                Debug.Log("Self-target ability - executing immediately");
                 ExecuteAbility(ability, currentSelectedUnit.transform.position, currentSelectedUnit);
                 return true;
 
@@ -420,10 +470,12 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
             case TargetType.Area:
             case TargetType.Path:
             case TargetType.Point:
+                Debug.Log($"Starting targeting for {ability.TargetType} ability");
                 StartTargeting(ability);
                 return true;
 
             default:
+                Debug.LogWarning($"Unknown target type: {ability.TargetType}");
                 return false;
         }
     }
@@ -471,6 +523,11 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         }
     }
 
+
+
+    #endregion
+
+    #region Targeting System
     private void HandleTargeting()
     {
         if (!isTargeting || currentlyTargeting == null || currentSelectedUnit == null) return;
@@ -483,33 +540,81 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         // Handle targeting completion
         if (mouse.leftButton.wasPressedThisFrame)
         {
+            Debug.Log("Left mouse clicked during targeting");
             CompleteTargeting(mouseWorldPos);
         }
         else if (mouse.rightButton.wasPressedThisFrame)
         {
+            Debug.Log("Right mouse clicked - canceling targeting");
             CancelTargeting();
         }
     }
 
-    #endregion
-
-    #region Targeting System
-
     private void StartTargeting(IAbility ability)
     {
+        Debug.Log($"=== StartTargeting({ability.Name}) called ===");
+
         isTargeting = true;
         currentlyTargeting = ability;
 
         // Create preview object if needed
         CreatePreviewObject(ability);
 
-        // Change cursor or other UI feedback here
-        // Example: Cursor.SetCursor(targetingCursor, Vector2.zero, CursorMode.Auto);
+        Debug.Log($"Targeting started. isTargeting: {isTargeting}, currentlyTargeting: {currentlyTargeting?.Name}");
+    }
+
+    private bool IsValidTarget(GameObject target, TargetType targetType)
+    {
+        Debug.Log($"=== IsValidTarget({target?.name}, {targetType}) ===");
+
+        if (target == null || currentSelectedUnit == null)
+        {
+            Debug.Log("Target or selected unit is null");
+            return false;
+        }
+
+        var targetUnit = target.GetComponent<Unit>();
+        if (targetUnit == null || !targetUnit.IsAlive())
+        {
+            Debug.Log($"Target {target.name} has no Unit component or is dead");
+            return false;
+        }
+
+        switch (targetType)
+        {
+            case TargetType.Ally:
+                bool isAlly = target.tag == currentSelectedUnit.tag;
+                Debug.Log($"Ally check: target.tag={target.tag}, caster.tag={currentSelectedUnit.tag}, isAlly={isAlly}");
+                return isAlly;
+
+            case TargetType.Enemy:
+                bool isEnemy = target.tag != currentSelectedUnit.tag &&
+                               ((currentSelectedUnit.tag == "Player" && target.tag == "Enemy") ||
+                                (currentSelectedUnit.tag == "Enemy" && target.tag == "Player"));
+                Debug.Log($"Enemy check: target.tag={target.tag}, caster.tag={currentSelectedUnit.tag}, isEnemy={isEnemy}");
+                return isEnemy;
+
+            default:
+                Debug.Log($"Unknown target type: {targetType}");
+                return false;
+        }
     }
 
     private void CompleteTargeting(Vector3 targetPosition)
     {
-        if (currentlyTargeting == null || currentSelectedUnit == null) return;
+        Debug.Log($"=== CompleteTargeting called at position {targetPosition} ===");
+
+        if (currentlyTargeting == null)
+        {
+            Debug.LogError("currentlyTargeting is null!");
+            return;
+        }
+
+        if (currentSelectedUnit == null)
+        {
+            Debug.LogError("currentSelectedUnit is null!");
+            return;
+        }
 
         GameObject targetObject = null;
 
@@ -517,24 +622,31 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         if (currentlyTargeting.TargetType == TargetType.Ally ||
             currentlyTargeting.TargetType == TargetType.Enemy)
         {
+            Debug.Log("Looking for target unit...");
             targetObject = GetTargetAtPosition(targetPosition);
+            Debug.Log($"Found target: {targetObject?.name}");
 
             if (targetObject == null || !IsValidTarget(targetObject, currentlyTargeting.TargetType))
             {
-                // Invalid target, cancel
+                Debug.LogWarning($"Invalid target: {targetObject?.name} for {currentlyTargeting.TargetType}");
                 CancelTargeting();
                 return;
             }
+            Debug.Log($"Valid target confirmed: {targetObject.name}");
         }
 
         // Check range
         float distance = Vector3.Distance(currentSelectedUnit.transform.position, targetPosition);
+        Debug.Log($"Distance to target: {distance}, Ability range: {currentlyTargeting.Range}");
+
         if (distance > currentlyTargeting.Range)
         {
-            // Out of range, could move closer or just cancel
+            Debug.LogWarning($"Out of range! Distance: {distance:F2}, Range: {currentlyTargeting.Range}");
             CancelTargeting();
             return;
         }
+
+        Debug.Log("Range check passed - executing ability!");
 
         // Execute the ability
         ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
@@ -627,21 +739,41 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     private void ExecuteAbility(IAbility ability, Vector3 targetPosition, GameObject target = null)
     {
-        if (currentSelectedUnit == null || !ability.CanUse(currentSelectedUnit)) return;
+        Debug.Log($"=== ExecuteAbility({ability.Name}) called with target: {target?.name} ===");
+
+        if (currentSelectedUnit == null)
+        {
+            Debug.LogError("currentSelectedUnit is null in ExecuteAbility!");
+            return;
+        }
+
+        if (!ability.CanUse(currentSelectedUnit))
+        {
+            Debug.LogWarning("CanUse failed in ExecuteAbility!");
+            return;
+        }
 
         // Get the ability slot for cooldown tracking
         int slotIndex = GetAbilitySlotIndex(ability);
-        if (slotIndex == -1) return;
+        Debug.Log($"Ability slot index: {slotIndex}");
+
+        if (slotIndex == -1)
+        {
+            Debug.LogError("Ability not found in slots!");
+            return;
+        }
 
         var slot = abilitySlots[slotIndex];
 
         // Start casting or execute immediately
         if (ability.CastTime > 0)
         {
+            Debug.Log($"Starting cast (cast time: {ability.CastTime}s)");
             StartCoroutine(CastAbility(ability, targetPosition, target, slot));
         }
         else
         {
+            Debug.Log("Executing ability immediately (no cast time)");
             ability.Execute(currentSelectedUnit, targetPosition, target);
             StartCooldown(slot, ability);
             OnAbilityUsed?.Invoke(currentSelectedUnit, ability);
@@ -734,27 +866,7 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         return null;
     }
 
-    private bool IsValidTarget(GameObject target, TargetType targetType)
-    {
-        if (target == null || currentSelectedUnit == null) return false;
-
-        var targetUnit = target.GetComponent<Unit>();
-        if (targetUnit == null || !targetUnit.IsAlive()) return false;
-
-        switch (targetType)
-        {
-            case TargetType.Ally:
-                return target.tag == currentSelectedUnit.tag;
-
-            case TargetType.Enemy:
-                return target.tag != currentSelectedUnit.tag &&
-                       ((currentSelectedUnit.tag == "Player" && target.tag == "Enemy") ||
-                        (currentSelectedUnit.tag == "Enemy" && target.tag == "Player"));
-
-            default:
-                return false;
-        }
-    }
+   
 
     private int GetAbilitySlotIndex(IAbility ability)
     {
@@ -823,12 +935,22 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
             slot.uiButton.interactable = hasUnitSelected && slot.ability != null;
         }
 
-        // Update icon
+        // Update icon - AUTOMATICALLY PULL FROM ABILITY SO
         if (slot.iconImage != null)
         {
             if (slot.ability != null)
             {
-                slot.iconImage.sprite = slot.ability.Icon;
+                // AUTOMATICALLY SET ICON FROM ABILITY
+                if (slot.ability.Icon != null)
+                {
+                    slot.iconImage.sprite = slot.ability.Icon;
+                    Debug.Log($"Set icon for slot {slotIndex} from ability {slot.ability.Name}");
+                }
+                else
+                {
+                    Debug.LogWarning($"Ability {slot.ability.Name} has no icon assigned!");
+                    slot.iconImage.sprite = null;
+                }
 
                 // Grey out icon if no unit selected or ability not usable
                 if (!hasUnitSelected)
@@ -926,4 +1048,6 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     }
 
     #endregion
+
+
 }

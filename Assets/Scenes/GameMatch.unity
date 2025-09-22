@@ -4175,6 +4175,7 @@ GameObject:
   - component: {fileID: 1285341387}
   - component: {fileID: 1285341386}
   - component: {fileID: 1285341390}
+  - component: {fileID: 1285341391}
   m_Layer: 5
   m_Name: CommandCanvas
   m_TagString: Untagged
@@ -4283,14 +4284,64 @@ MonoBehaviour:
   patrolButton: {fileID: 1271248626}
   stopMovementButton: {fileID: 325540926}
   holdPositionButton: {fileID: 676090250}
-  abilityButton1: {fileID: 1047963197}
-  abilityButton2: {fileID: 1913419519}
-  abilityButton3: {fileID: 1304679631}
-  abilityButton4: {fileID: 1317252468}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   guardAreaDisplay: {fileID: 1737492414}
-  moveToDisplay: {fileID: 0}
+  moveToDisplay: {fileID: 198126267}
+--- !u!114 &1285341391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5c37929226f3064ea756d5ff697ac1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityManager
+  abilityCanvas: {fileID: 1285341388}
+  hotbarPanel: {fileID: 1400450417}
+  abilityButtons:
+  - {fileID: 1047963197}
+  - {fileID: 1913419519}
+  - {fileID: 1304679631}
+  - {fileID: 1317252468}
+  - {fileID: 0}
+  - {fileID: 0}
+  abilityIcons:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cooldownOverlays:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  cooldownTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  previewMaterial: {fileID: 0}
+  areaPreviewPrefab: {fileID: 0}
+  pathPreviewPrefab: {fileID: 0}
+  readyColor: {r: 1, g: 1, b: 1, a: 1}
+  cooldownColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  castingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  disabledColor: {r: 1, g: 0, b: 0, a: 1}
+  noSelectionColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  showTooltips: 1
 --- !u!1 &1304679629
 GameObject:
   m_ObjectHideFlags: 0
@@ -6308,6 +6359,18 @@ PrefabInstance:
     - target: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_Name
       value: Unit
+      objectReference: {fileID: 0}
+    - target: {fileID: 6168473199643691038, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: 'abilities.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 49a16e81b4b228c46ba93013f406a194, type: 2}
+    - target: {fileID: 6168473199643691038, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: availableAbilities.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6168473199643691038, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: 'availableAbilities.Array.data[0]'
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalPosition.x

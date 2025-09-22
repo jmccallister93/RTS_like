@@ -628,13 +628,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnitAbilities
   abilities:
+  - {fileID: 11400000, guid: 49a16e81b4b228c46ba93013f406a194, type: 2}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  - {fileID: 0}
-  availableAbilities: []
+  availableAbilities:
+  - {fileID: 11400000, guid: 49a16e81b4b228c46ba93013f406a194, type: 2}
 --- !u!1 &4523606610297031665
 GameObject:
   m_ObjectHideFlags: 0

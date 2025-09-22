@@ -26,10 +26,10 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     public Button patrolButton;
     public Button stopMovementButton;
     public Button holdPositionButton;
-    public Button abilityButton1;
-    public Button abilityButton2;
-    public Button abilityButton3;
-    public Button abilityButton4;
+    //public Button abilityButton1;
+    //public Button abilityButton2;
+    //public Button abilityButton3;
+    //public Button abilityButton4;
 
     [Header("Visual Feedback")]
     public Color normalColor = Color.white;
@@ -62,10 +62,10 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         patrolButton.onClick.AddListener(() => SelectCommand(CommandType.Patrol));
         stopMovementButton.onClick.AddListener(() => ExecuteStopCommand());
         holdPositionButton.onClick.AddListener(() => ExecuteHoldCommand());
-        abilityButton1.onClick.AddListener(() => SelectCommand(CommandType.Ability1));
-        abilityButton2.onClick.AddListener(() => SelectCommand(CommandType.Ability2));
-        abilityButton3.onClick.AddListener(() => SelectCommand(CommandType.Ability3));
-        abilityButton4.onClick.AddListener(() => SelectCommand(CommandType.Ability4));
+        //abilityButton1.onClick.AddListener(() => SelectCommand(CommandType.Ability1));
+        //abilityButton2.onClick.AddListener(() => SelectCommand(CommandType.Ability2));
+        //abilityButton3.onClick.AddListener(() => SelectCommand(CommandType.Ability3));
+        //abilityButton4.onClick.AddListener(() => SelectCommand(CommandType.Ability4));
 
         SelectCommand(CommandType.Move);
         guardAreaDisplay.CreateGuardAreaIndicator();
@@ -149,10 +149,10 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         else if (keyboard.vKey.wasPressedThisFrame) SelectCommand(CommandType.Patrol);
         else if (keyboard.bKey.wasPressedThisFrame) ExecuteHoldCommand();
         else if (keyboard.nKey.wasPressedThisFrame) ExecuteStopCommand();
-        else if (keyboard.digit1Key.wasPressedThisFrame) SelectCommand(CommandType.Ability1);
-        else if (keyboard.digit2Key.wasPressedThisFrame) SelectCommand(CommandType.Ability2);
-        else if (keyboard.digit3Key.wasPressedThisFrame) SelectCommand(CommandType.Ability3);
-        else if (keyboard.digit4Key.wasPressedThisFrame) SelectCommand(CommandType.Ability4);
+        //else if (keyboard.digit1Key.wasPressedThisFrame) SelectCommand(CommandType.Ability1);
+        //else if (keyboard.digit2Key.wasPressedThisFrame) SelectCommand(CommandType.Ability2);
+        //else if (keyboard.digit3Key.wasPressedThisFrame) SelectCommand(CommandType.Ability3);
+        //else if (keyboard.digit4Key.wasPressedThisFrame) SelectCommand(CommandType.Ability4);
     }
 
     bool IsValidEnemyTarget(GameObject target, List<GameObject> selectedUnits)
@@ -204,10 +204,10 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         patrolButton.image.color = normalColor;
         stopMovementButton.image.color = normalColor;
         holdPositionButton.image.color = normalColor;
-        abilityButton1.image.color = normalColor;
-        abilityButton2.image.color = normalColor;
-        abilityButton3.image.color = normalColor;
-        abilityButton4.image.color = normalColor;
+        //abilityButton1.image.color = normalColor;
+        //abilityButton2.image.color = normalColor;
+        //abilityButton3.image.color = normalColor;
+        //abilityButton4.image.color = normalColor;
 
         // highlight
         switch (currentCommand)
@@ -217,10 +217,10 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
             case CommandType.AttackMove: attackMoveButton.image.color = selectedColor; break;
             case CommandType.Patrol: patrolButton.image.color = selectedColor; break;
             case CommandType.Hold: holdPositionButton.image.color = selectedColor; break;
-            case CommandType.Ability1: abilityButton1.image.color = selectedColor; break;
-            case CommandType.Ability2: abilityButton2.image.color = selectedColor; break;
-            case CommandType.Ability3: abilityButton3.image.color = selectedColor; break;
-            case CommandType.Ability4: abilityButton4.image.color = selectedColor; break;
+            //case CommandType.Ability1: abilityButton1.image.color = selectedColor; break;
+            //case CommandType.Ability2: abilityButton2.image.color = selectedColor; break;
+            //case CommandType.Ability3: abilityButton3.image.color = selectedColor; break;
+            //case CommandType.Ability4: abilityButton4.image.color = selectedColor; break;
         }
     }
 
@@ -249,29 +249,29 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
                     command = new HoldCommand(unitObj);
                     break;
 
-                case CommandType.Ability1:
-                case CommandType.Ability2:
-                case CommandType.Ability3:
-                case CommandType.Ability4:
-                    int slotIndex = (int)currentCommand - (int)CommandType.Ability1;
-                    var unitAbilities = unitObj.GetComponent<UnitAbilities>();
-                    var ability = unitAbilities?.GetAbility(slotIndex);
+                //case CommandType.Ability1:
+                //case CommandType.Ability2:
+                //case CommandType.Ability3:
+                //case CommandType.Ability4:
+                //    int slotIndex = (int)currentCommand - (int)CommandType.Ability1;
+                //    var unitAbilities = unitObj.GetComponent<UnitAbilities>();
+                //    var ability = unitAbilities?.GetAbility(slotIndex);
 
-                    if (ability != null && ability.CanUse(unitObj))
-                    {
-                        if (ability.TargetType == TargetType.None || ability.TargetType == TargetType.Self)
-                        {
-                            ability.StartCast(unitObj, unitObj.transform.position, unitObj);
-                            ability.Execute(unitObj, unitObj.transform.position, unitObj);
-                        }
-                        else
-                        {
-                            pendingAbility = ability;
-                            pendingCaster = unitObj;
-                            isAwaitingTarget = true;
-                        }
-                    }
-                    break;
+                //    if (ability != null && ability.CanUse(unitObj))
+                //    {
+                //        if (ability.TargetType == TargetType.None || ability.TargetType == TargetType.Self)
+                //        {
+                //            ability.StartCast(unitObj, unitObj.transform.position, unitObj);
+                //            ability.Execute(unitObj, unitObj.transform.position, unitObj);
+                //        }
+                //        else
+                //        {
+                //            pendingAbility = ability;
+                //            pendingCaster = unitObj;
+                //            isAwaitingTarget = true;
+                //        }
+                //    }
+                //    break;
             }
 
             if (command != null) ExecuteOrQueueCommand(command);
