@@ -8,11 +8,15 @@ public class WarriorClass : RPGClass
     private bool isRaging = false;
     private Coroutine rageCoroutine;
 
+    [Header("Warrior Passive Benefits")]
+    public float healthPerLevel = 15f;
+    public float damagePerStrength = 1.5f;
+
     protected override void InitializeClassResource()
     {
         resourceName = "Rage";
         maxResource = 100;
-        currentResource = 0; // Warriors start with no rage
+        currentResource = 0; // Start with no rage
         OnResourceChanged?.Invoke(currentResource, maxResource);
     }
 
@@ -20,36 +24,41 @@ public class WarriorClass : RPGClass
     {
         base.OnLevelUp(newLevel);
 
-        // Warrior-specific level benefits
+        // Warrior gets extra health per level
+        if (characterManager != null)
+        {
+            characterManager.ForceRecalculateStats(); // This will include new Constitution from leveling
+        }
+
         switch (newLevel)
         {
             case 5:
                 maxResource += 20; // Increase max rage
-                Debug.Log("Rage capacity increased!");
+                Debug.Log($"{classDefinition.className} - Rage capacity increased!");
                 break;
             case 10:
                 rageMultiplier += 0.25f; // Stronger rage
-                Debug.Log("Rage becomes more powerful!");
+                Debug.Log($"{classDefinition.className} - Rage becomes more powerful!");
                 break;
         }
     }
 
     public override void ApplyPassiveEffects()
     {
-        // Warrior passive: Gain rage when taking damage or dealing damage
-        if (isRaging)
+        // Warrior passive: Rage provides damage bonus
+        if (isRaging && characterManager != null)
         {
-            // Apply rage damage bonus through character manager
-            // This would modify the damage calculation
+            // This could modify damage calculations in CharacterManager
+            // For now, we'll handle it when abilities are used
         }
     }
 
     public override void OnAbilityUsed(AbilitySO ability)
     {
-        // Warriors gain rage when using abilities
-        if (ability.Name.Contains("Attack"))
+        // Warriors gain rage when using combat abilities
+        if (ability.Name.ToLower().Contains("attack") || ability.Name.ToLower().Contains("strike"))
         {
-            RestoreResource(10);
+            RestoreResource(15);
         }
     }
 
@@ -64,7 +73,10 @@ public class WarriorClass : RPGClass
                 StopCoroutine(rageCoroutine);
 
             rageCoroutine = StartCoroutine(RageCoroutine());
-            Debug.Log("Warrior enters rage mode!");
+            Debug.Log($"{classDefinition.className} enters rage mode!");
+
+            // Apply rage effects
+            ApplyPassiveEffects();
         }
     }
 
@@ -72,6 +84,9 @@ public class WarriorClass : RPGClass
     {
         yield return new UnityEngine.WaitForSeconds(rageDuration);
         isRaging = false;
-        Debug.Log("Rage mode ended.");
+        Debug.Log($"{classDefinition.className} rage mode ended.");
     }
+
+    public bool IsRaging => isRaging;
+    public float GetRageDamageMultiplier() => isRaging ? rageMultiplier : 1f;
 }

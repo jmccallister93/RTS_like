@@ -4,9 +4,9 @@ using Random = UnityEngine.Random;
 
 public class Unit : MonoBehaviour
 {
-    [Header("Health Settings")]
-    [SerializeField] private float maxHealth = 100f;
-    [SerializeField] private float currentHealth;
+    //[Header("Health Settings")]
+    //[SerializeField] private float maxHealth = 100f;
+    //[SerializeField] private float currentHealth;
 
     [Header("UI References")]
     [SerializeField] private HealthTracker healthBar;
@@ -21,6 +21,7 @@ public class Unit : MonoBehaviour
     private UnitMovement unitMovement;
     private AttackController attackController;
     private GuardAreaDisplay guardAreaDisplay;
+    private CharacterManager characterManager;
     private Animator unitAnimator;
 
     private bool isDead = false;
@@ -32,19 +33,27 @@ public class Unit : MonoBehaviour
         // Initialize components
         unitMovement = GetComponent<UnitMovement>();
         attackController = GetComponent<AttackController>();
+        characterManager = GetComponent<CharacterManager>();
         unitAnimator = GetComponent<Animator>();
 
         // Initialize health
-        currentHealth = maxHealth;
+        //currentHealth = maxHealth;
 
-        // Find and setup health bar if it exists
+        //// Find and setup health bar if it exists
         if (healthBar == null)
         {
             healthBar = GetComponentInChildren<HealthTracker>();
         }
-        if (healthBar != null)
+        if (healthBar != null && characterManager != null)
         {
-            healthBar.UpdateSliderValue(currentHealth, maxHealth);
+            healthBar.UpdateSliderValue(characterManager.Health, characterManager.Health);
+        }
+
+        // Subscribe to health changes from CharacterManager
+        if (characterManager != null)
+        {
+            characterManager.OnHealthChanged += UpdateHealthUI;
+            characterManager.OnDeath += HandleDeath;
         }
 
         //Initialize selection
@@ -59,18 +68,31 @@ public class Unit : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Remove from both lists when destroyed
+        // Unsubscribe from events
+        if (characterManager != null)
+        {
+            characterManager.OnHealthChanged -= UpdateHealthUI;
+            characterManager.OnDeath -= HandleDeath;
+        }
+
+        // Remove from selection
         if (UnitSelectionManager.Instance != null) UnitSelectionManager.Instance.RemoveUnitFromSelection(this.gameObject);
+    }
+
+    private void UpdateHealthUI(float currentHealth, float maxHealth)
+    {
+        if (healthBar != null)
+        {
+            healthBar.UpdateSliderValue(currentHealth, maxHealth);
+        }
     }
 
     public void TakeDamage(float damageAmount)
     {
-        if (isDead) return;
+        if (characterManager == null || !IsAlive()) return;
 
-        currentHealth -= damageAmount;
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
-        if (healthBar != null) healthBar.UpdateSliderValue(currentHealth, maxHealth);
+        // Apply damage through CharacterManager
+        characterManager.TakeDamage(damageAmount);
 
         // Spawn floating damage text
         if (floatingDamageTextPrefab != null)
@@ -79,44 +101,34 @@ public class Unit : MonoBehaviour
                 ? floatingTextSpawnPoint.position
                 : transform.position + Vector3.up * 2f;
 
-            // Slight random horizontal jitter so multiple hits don’t overlap perfectly
             spawnPos += new Vector3(Random.Range(-0.2f, 0.2f), 0f, Random.Range(-0.2f, 0.2f));
 
             GameObject textObj = Instantiate(floatingDamageTextPrefab, spawnPos, Quaternion.identity);
             var fdt = textObj.GetComponent<FloatingDamageText>();
             if (fdt != null)
             {
-                // You can pass a color override (e.g., Color.yellow for crits)
                 fdt.Initialize(damageAmount);
             }
         }
-
-        if (currentHealth <= 0) Die();
-
     }
 
-    private void Die()
+    private void HandleDeath()
     {
-        if (isDead) return; 
-
-        isDead = true;
-
         // Remove from selection manager lists immediately
         if (UnitSelectionManager.Instance != null) UnitSelectionManager.Instance.RemoveUnitFromSelection(this.gameObject);
 
-        // Clear any current target (so other units stop attacking this one)
+        // Clear any current target
         if (attackController != null) attackController.targetToAttack = null;
 
         // Trigger dead state in animator
         if (unitAnimator != null) unitAnimator.SetBool("isDead", true);
-
     }
 
     // Public getter for other scripts to check health
-    public float GetCurrentHealth() => currentHealth;
-    public float GetMaxHealth() => maxHealth;
-    public bool IsAlive() => !isDead; 
-    public bool IsDead() => isDead;
+    public float GetCurrentHealth() => characterManager?.Health ?? 0f;
+    public float GetMaxHealth() => characterManager?.MaxHealth ?? 100f;
+    public bool IsAlive() => characterManager?.IsAlive ?? false;
+    public bool IsDead() => !IsAlive();
     public bool IsHoldingPosition() => isHoldingPosition;
 
     public void MoveTo(Vector3 targetPosition)

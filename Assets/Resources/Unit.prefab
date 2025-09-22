@@ -345,10 +345,16 @@ GameObject:
   - component: {fileID: 6505679774542552150}
   - component: {fileID: 2308565361275725158}
   - component: {fileID: 1133211024751393437}
-  - component: {fileID: 4490762081966064489}
   - component: {fileID: 1639268436421564568}
+  - component: {fileID: 4490762081966064489}
   - component: {fileID: 4617355042445406440}
   - component: {fileID: 256743361347747286}
+  - component: {fileID: 1368202634040825614}
+  - component: {fileID: 6922075099483026051}
+  - component: {fileID: 846389932709456502}
+  - component: {fileID: 8387380854119652301}
+  - component: {fileID: 402938238578738617}
+  - component: {fileID: 6168473199643691038}
   m_Layer: 7
   m_Name: Unit
   m_TagString: Player
@@ -462,6 +468,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1639268436421564568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 476ad874fac5c544d9cd359934ea0593, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Unit
+  healthBar: {fileID: 6341198594044653373}
+  corpseLifetime: 10
+  floatingDamageTextPrefab: {fileID: 7596531605966106363, guid: 0b186609f2a59744f92b4b7cd842cc97, type: 3}
+  floatingTextSpawnPoint: {fileID: 2876048279399836699}
 --- !u!114 &4490762081966064489
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -483,24 +505,6 @@ MonoBehaviour:
   isCommandedtoMove: 0
   currentMode: 0
   patrolInterruptedByCombat: 0
---- !u!114 &1639268436421564568
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2554461699235619137}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 476ad874fac5c544d9cd359934ea0593, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Unit
-  maxHealth: 1000
-  currentHealth: 0
-  healthBar: {fileID: 6341198594044653373}
-  corpseLifetime: 10
-  floatingDamageTextPrefab: {fileID: 7596531605966106363, guid: 0b186609f2a59744f92b4b7cd842cc97, type: 3}
-  floatingTextSpawnPoint: {fileID: 2876048279399836699}
 --- !u!114 &4617355042445406440
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -514,7 +518,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AttackController
   targetToAttack: {fileID: 0}
-  attackDamage: 5
   attackRange: 2
   detectionRange: 2
   showDebugLogs: 1
@@ -540,6 +543,98 @@ MonoBehaviour:
   iconSize: 1.25
   moveIconType: 1
   enemyIconType: 1
+--- !u!114 &1368202634040825614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9ab945bd04bc86499d2049c0adb06eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LevelManager
+  currentLevel: 1
+  currentExperience: 0
+  classDefinition: {fileID: 0}
+--- !u!114 &6922075099483026051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d055b004050d65b459812ce3c9d19d89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatManager
+--- !u!114 &846389932709456502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f93df03e03cafa44cb0fdc2cc3347160, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkillManager
+--- !u!114 &8387380854119652301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1ad7d54e150ac04d94c4f1fadf9cbdd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterManager
+  statManager: {fileID: 6922075099483026051}
+--- !u!114 &402938238578738617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b29ca5c0fb05e4b8972352af871fa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WarriorClass
+  classDefinition: {fileID: 11400000, guid: 33612a2fe80004e4fb7aae25d9dabf0a, type: 2}
+  currentResource: 0
+  maxResource: 100
+  resourceName: Mana
+  rageMultiplier: 1.5
+  rageDuration: 10
+  healthPerLevel: 15
+  damagePerStrength: 1.5
+--- !u!114 &6168473199643691038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2554461699235619137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77501def970f4e54a9b782fa2ca37f40, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnitAbilities
+  abilities:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  availableAbilities: []
 --- !u!1 &4523606610297031665
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,7 +4,7 @@ public class CharacterManager : MonoBehaviour
 {
     [SerializeField] private StatManager statManager;
 
-    private int _baseHealth = 10;
+    private int _baseMaxHealth = 10;
     private int _baseSpeed = 1;
     private int _baseAbilityModifier = 1;
     private int _baseMeleeDamage = 1;
@@ -15,19 +15,25 @@ public class CharacterManager : MonoBehaviour
     private int _baseAbilityDefense = 1;
 
     // Calculated values (with stat bonuses)
-    private int _health, _speed, _abilityModifier;
-    private int _meleeDamage, _rangedDamage, _abilityDamage;
-    private int _meleeDefense, _rangedDefense, _abilityDefense;
+    private float _maxHealth, _currentHealth;
+    private float _speed, _abilityModifier;
+    private float _meleeDamage, _rangedDamage, _abilityDamage;
+    private float _meleeDefense, _rangedDefense, _abilityDefense;
 
-    public int Health => _health;
-    public int Speed => _speed;
-    public int AbilityModifier => _abilityModifier;
-    public int MeleeDamage => _meleeDamage;
-    public int RangedDamage => _rangedDamage;
-    public int AbilityDamage => _abilityDamage;
-    public int MeleeDefense => _meleeDefense;
-    public int RangedDefense => _rangedDefense;
-    public int AbilityDefense => _abilityDefense;
+    private bool _isAlive = true;
+
+    // Properties
+    public float Health => _currentHealth;
+    public float MaxHealth => _maxHealth;
+    public float Speed => _speed;
+    public float AbilityModifier => _abilityModifier;
+    public float MeleeDamage => _meleeDamage;
+    public float RangedDamage => _rangedDamage;
+    public float AbilityDamage => _abilityDamage;
+    public float MeleeDefense => _meleeDefense;
+    public float RangedDefense => _rangedDefense;
+    public float AbilityDefense => _abilityDefense;
+    public bool IsAlive => _isAlive;
 
     private void Awake()
     {
@@ -46,6 +52,7 @@ public class CharacterManager : MonoBehaviour
 
         // Calculate initial stats
         RecalculateStats();
+        _currentHealth = _maxHealth;
     }
 
     private void OnDestroy()
@@ -61,16 +68,14 @@ public class CharacterManager : MonoBehaviour
     {
         if (statManager == null) return;
 
-        // Health modified by Constitution and Vitality
-        _health = _baseHealth + statManager.Constitution + statManager.Vitality;
+        float previousMaxHealth = _maxHealth;
 
-        // Speed modified by Mobility and Dexterity
+        // Calculate all stats with stat bonuses
+        _maxHealth = _baseMaxHealth + (statManager.Constitution * 5) + (statManager.Vitality * 3);
         _speed = _baseSpeed + statManager.Mobility + statManager.Dexterity;
-
-        // Ability Modifier affected by Mind and Focus
         _abilityModifier = _baseAbilityModifier + statManager.Mind + statManager.Focus;
 
-        // Damage calculations (1:1 ratio as requested)
+        // Damage calculations
         _meleeDamage = _baseMeleeDamage + statManager.Strength;
         _rangedDamage = _baseRangedDamage + statManager.Dexterity;
         _abilityDamage = _baseAbilityDamage + statManager.Mind;
@@ -80,18 +85,58 @@ public class CharacterManager : MonoBehaviour
         _rangedDefense = _baseRangedDefense + statManager.Reflex;
         _abilityDefense = _baseAbilityDefense + statManager.Willpower;
 
-        // Notify that character stats have changed
+        // Adjust current health if max health changed
+        if (previousMaxHealth > 0 && _maxHealth != previousMaxHealth)
+        {
+            float healthPercentage = _currentHealth / previousMaxHealth;
+            _currentHealth = _maxHealth * healthPercentage;
+        }
+
         OnCharacterStatsChanged?.Invoke();
+        OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
-    // Public method to manually recalculate if needed
+    public void TakeDamage(float damageAmount)
+    {
+        if (!_isAlive) return;
+
+        _currentHealth -= damageAmount;
+        _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
+
+        OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+
+        if (_currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    public void Heal(float healAmount)
+    {
+        if (!_isAlive) return;
+
+        _currentHealth += healAmount;
+        _currentHealth = Mathf.Clamp(_currentHealth, 0, _maxHealth);
+
+        OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+    }
+
+    private void Die()
+    {
+        if (!_isAlive) return;
+
+        _isAlive = false;
+        OnDeath?.Invoke();
+    }
+
     public void ForceRecalculateStats()
     {
         RecalculateStats();
     }
 
-    // Event for when character stats change
-    public delegate void CharacterStatsChangedAction();
-    public event CharacterStatsChangedAction OnCharacterStatsChanged;
-
+    // Events
+    public System.Action OnCharacterStatsChanged;
+    public System.Action<float, float> OnHealthChanged; // current, max
+    public System.Action OnDeath;
 }
+

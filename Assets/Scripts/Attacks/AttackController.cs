@@ -5,7 +5,6 @@ public class AttackController : MonoBehaviour, IPausable
     public Transform targetToAttack;
 
     [Header("Attack Settings")]
-    [SerializeField] public float attackDamage = 25f;
     [SerializeField] public float attackRange = 2f;
     [SerializeField] public float detectionRange = 10f;
 
@@ -17,17 +16,18 @@ public class AttackController : MonoBehaviour, IPausable
     public Vector3 guardPosition { get; private set; }
     public float guardRadius { get; private set; } = 5f;
 
-    // Pause-related fields
+    // Component references
     private Transform pausedTarget;
     private bool hadTargetWhenPaused;
-
     private UnitMovement movement;
-    private Unit unitComponent; 
+    private Unit unitComponent;
+    private CharacterManager characterManager; // NEW: For damage values
 
     private void Awake()
     {
         movement = GetComponent<UnitMovement>();
-        unitComponent = GetComponent<Unit>(); 
+        unitComponent = GetComponent<Unit>();
+        characterManager = GetComponent<CharacterManager>(); // NEW
     }
 
     private void Start()
@@ -37,9 +37,7 @@ public class AttackController : MonoBehaviour, IPausable
         {
             detectionRange = detectionCollider.radius;
         }
-
     }
-
 
     public void OnPause()
     {
@@ -60,11 +58,8 @@ public class AttackController : MonoBehaviour, IPausable
 
     private void OnTriggerEnter(Collider other)
     {
-
-        // Don't acquire targets while holding position
         if (unitComponent != null && unitComponent.IsHoldingPosition()) return;
 
-        // Ignore while in pure Move mode
         var movement = GetComponent<UnitMovement>();
         if (movement != null && movement.isCommandedtoMove && movement.currentMode == MovementMode.Move) return;
 
@@ -94,7 +89,6 @@ public class AttackController : MonoBehaviour, IPausable
         }
     }
 
-    // Update method to handle lost targets that might have been destroyed
     private void Update()
     {
         if (movement != null && movement.currentMode == MovementMode.Move) return;
@@ -105,10 +99,8 @@ public class AttackController : MonoBehaviour, IPausable
             var unit = targetToAttack.GetComponent<Unit>();
             if (unit == null || !unit.IsAlive())
             {
-               
                 targetToAttack = null;
 
-                // Force transition back to idle state
                 var animator = GetComponent<Animator>();
                 if (animator != null)
                 {
@@ -120,17 +112,15 @@ public class AttackController : MonoBehaviour, IPausable
                 return;
             }
 
-            // Handle hold position behavior with current target
+            // Handle hold position behavior
             if (unitComponent != null && unitComponent.IsHoldingPosition())
             {
                 float distanceToTarget = Vector3.Distance(transform.position, targetToAttack.position);
 
-                // Only attack if target is within close range, don't chase
                 if (distanceToTarget > attackRange)
                 {
                     targetToAttack = null;
 
-                    // Stop any movement and set to idle
                     var animator = GetComponent<Animator>();
                     if (animator != null)
                     {
@@ -141,21 +131,19 @@ public class AttackController : MonoBehaviour, IPausable
                 }
                 else
                 {
-                    // Target is close enough - stop movement but continue attacking
                     movement.StopMovement();
 
                     var animator = GetComponent<Animator>();
                     if (animator != null)
                     {
-                        animator.SetBool("isFollowing", false); // Don't follow while holding
-                        // Let attacking animation continue if in range
+                        animator.SetBool("isFollowing", false);
                     }
                 }
-                return; // Don't process normal movement/guard logic while holding
+                return;
             }
         }
 
-        // Normal guard behavior (only if not holding position)
+        // Normal guard behavior
         if (isGuarding && targetToAttack != null && (unitComponent == null || !unitComponent.IsHoldingPosition()))
         {
             float d = Vector3.Distance(targetToAttack.position, guardPosition);
@@ -173,7 +161,6 @@ public class AttackController : MonoBehaviour, IPausable
         guardPosition = position;
         guardRadius = radius;
 
-        // NEW: Don't move to guard position if holding position
         if (unitComponent == null || !unitComponent.IsHoldingPosition())
         {
             GetComponent<UnitMovement>()?.MoveToPosition(position, MovementMode.Guard);
@@ -187,7 +174,7 @@ public class AttackController : MonoBehaviour, IPausable
         if (potentialTarget == gameObject) return false;
 
         var unit = potentialTarget.GetComponent<Unit>();
-        if (unit == null || !unit.IsAlive()) return false; 
+        if (unit == null || !unit.IsAlive()) return false;
 
         string myTag = tag;
         string theirTag = potentialTarget.tag;
@@ -199,10 +186,8 @@ public class AttackController : MonoBehaviour, IPausable
 
     public void SetTarget(Transform newTarget)
     {
-        // Don't set new targets while holding position (except for direct attack commands)
         if (unitComponent != null && unitComponent.IsHoldingPosition())
         {
-            // Only allow targeting if the target is within attack range
             if (newTarget != null)
             {
                 float distanceToTarget = Vector3.Distance(transform.position, newTarget.position);
@@ -216,7 +201,6 @@ public class AttackController : MonoBehaviour, IPausable
         {
             targetToAttack = newTarget;
 
-            // Don't stop movement or set following if holding position
             if (unitComponent == null || !unitComponent.IsHoldingPosition())
             {
                 movement.StopMovement();
@@ -227,16 +211,13 @@ public class AttackController : MonoBehaviour, IPausable
         }
     }
 
-    // Method to handle hold position state changes
     public void SetHoldPosition(bool holdPosition)
     {
         if (holdPosition)
         {
-            // When entering hold position, stop movement and clear guard
             movement?.StopMovement();
             ClearGuardPosition();
 
-            // If we have a target that's too far, clear it
             if (targetToAttack != null)
             {
                 float distanceToTarget = Vector3.Distance(transform.position, targetToAttack.position);
@@ -251,7 +232,7 @@ public class AttackController : MonoBehaviour, IPausable
                         animator.SetBool("isFollowing", false);
                     }
                 }
-            } 
+            }
         }
     }
 
@@ -260,8 +241,11 @@ public class AttackController : MonoBehaviour, IPausable
         if (target == null) return;
 
         var u = target.GetComponent<Unit>();
-        if (u != null && u.IsAlive()) u.TakeDamage(attackDamage);  
+        if (u != null && u.IsAlive())
+        {
+            // Use melee damage from CharacterManager if available
+            float damage = characterManager?.MeleeDamage ?? 25f;
+            u.TakeDamage(damage);
+        }
     }
-
-   
 }
