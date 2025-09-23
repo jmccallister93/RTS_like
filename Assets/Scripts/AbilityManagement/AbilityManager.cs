@@ -141,14 +141,17 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     private void Update()
     {
-        // Don't process input while paused (except this manager can run when paused for UI)
-        if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-            return;
+        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
 
+        //  Still allow selection, hotkeys, and targeting while paused
         UpdateSelectedUnit();
         HandleHotkeyInput();
         HandleTargeting();
-        UpdateCooldowns();
+
+        //  Don't tick cooldowns while paused
+        if (!paused)
+            UpdateCooldowns();
+
         UpdateUI();
     }
 
@@ -444,36 +447,25 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     public bool TryUseAbility(IAbility ability)
     {
-        Debug.Log($"=== TryUseAbility({ability.Name}) called ===");
+        if (ability == null || currentSelectedUnit == null) return false;
+        if (!ability.CanUse(currentSelectedUnit)) return false;
 
-        if (ability == null)
-        {
-            Debug.LogError("Ability is null!");
-            return false;
-        }
-
-        if (currentSelectedUnit == null)
-        {
-            Debug.LogError("No selected unit!");
-            return false;
-        }
-
-        bool canUse = ability.CanUse(currentSelectedUnit);
-        Debug.Log($"CanUse result: {canUse}");
-
-        if (!canUse) return false;
-
-        // Cancel any current targeting
         CancelTargeting();
 
-        Debug.Log($"Ability TargetType: {ability.TargetType}");
+        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
 
-        // Handle different targeting types
         switch (ability.TargetType)
         {
             case TargetType.Self:
-                Debug.Log("Self-target ability - executing immediately");
-                ExecuteAbility(ability, currentSelectedUnit.transform.position, currentSelectedUnit);
+                if (paused)
+                {
+                    CommandQueue.Instance.QueueCommand(
+                        new AbilityCastCommand(currentSelectedUnit, ability, currentSelectedUnit.transform.position, currentSelectedUnit));
+                }
+                else
+                {
+                    ExecuteAbility(ability, currentSelectedUnit.transform.position, currentSelectedUnit);
+                }
                 return true;
 
             case TargetType.Ally:
@@ -616,77 +608,56 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     private void CompleteTargeting(Vector3 targetPosition)
     {
-        Debug.Log($"=== CompleteTargeting called at position {targetPosition} ===");
-
-        if (currentlyTargeting == null)
-        {
-            Debug.LogError("currentlyTargeting is null!");
-            return;
-        }
-
-        if (currentSelectedUnit == null)
-        {
-            Debug.LogError("currentSelectedUnit is null!");
-            return;
-        }
+        if (currentlyTargeting == null || currentSelectedUnit == null) return;
 
         GameObject targetObject = null;
-
-        // For unit targeting, check if we clicked on a valid target
-        if (currentlyTargeting.TargetType == TargetType.Ally ||
-            currentlyTargeting.TargetType == TargetType.Enemy)
+        if (currentlyTargeting.TargetType == TargetType.Ally || currentlyTargeting.TargetType == TargetType.Enemy)
         {
-            Debug.Log("Looking for target unit...");
             targetObject = GetTargetAtPosition(targetPosition);
-            Debug.Log($"Found target: {targetObject?.name}");
-
             if (targetObject == null || !IsValidTarget(targetObject, currentlyTargeting.TargetType))
             {
-                Debug.LogWarning($"Invalid target: {targetObject?.name} for {currentlyTargeting.TargetType}");
                 CancelTargeting();
                 return;
             }
-            Debug.Log($"Valid target confirmed: {targetObject.name}");
         }
 
-        // Check range
+        // Range check
         float distance = Vector3.Distance(currentSelectedUnit.transform.position, targetPosition);
-        Debug.Log($"Distance to target: {distance}, Ability range: {currentlyTargeting.Range}");
-
         if (distance > currentlyTargeting.Range)
         {
-            Debug.LogWarning($"Out of range! Distance: {distance:F2}, Range: {currentlyTargeting.Range}");
             CancelTargeting();
             return;
         }
 
-        Debug.Log("Range check passed - executing ability!");
+        var caster = currentSelectedUnit;
+        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
 
-        // IMPORTANT: Store the selected unit before executing
-        GameObject unitToKeepSelected = currentSelectedUnit;
+        if (paused)
+        {
+            //  Queue the ability for after resume
+            CommandQueue.Instance.QueueCommand(
+                new AbilityCastCommand(caster, currentlyTargeting, targetPosition, targetObject));
+        }
+        else
+        {
+            // Normal immediate path
+            ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
+        }
 
-        // Execute the ability
-        ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
-
-        // Clear targeting
+        // Clean up targeting/preview regardless
         isTargeting = false;
         currentlyTargeting = null;
         DestroyPreviewObject();
 
-        // FORCE the unit to stay selected after ability execution
-        if (unitToKeepSelected != null)
+        // keep selection stable (your existing logic)
+        if (caster != null)
         {
-            Debug.Log($"Forcing {unitToKeepSelected.name} to stay selected");
-            currentSelectedUnit = unitToKeepSelected;
-
-            // Also make sure it's in the selection manager's list
-            if (UnitSelectionManager.Instance != null)
+            currentSelectedUnit = caster;
+            if (UnitSelectionManager.Instance != null &&
+                !UnitSelectionManager.Instance.unitsSelected.Contains(caster))
             {
-                if (!UnitSelectionManager.Instance.unitsSelected.Contains(unitToKeepSelected))
-                {
-                    UnitSelectionManager.Instance.unitsSelected.Clear();
-                    UnitSelectionManager.Instance.unitsSelected.Add(unitToKeepSelected);
-                }
+                UnitSelectionManager.Instance.unitsSelected.Clear();
+                UnitSelectionManager.Instance.unitsSelected.Add(caster);
             }
         }
     }
@@ -770,7 +741,20 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     #endregion
 
     #region Ability Execution
-
+    public void ExecuteAbilityQueued(GameObject caster, IAbility ability, Vector3 targetPosition, GameObject target = null)
+    {
+        // Temporarily treat this caster as selected so slot/cooldowns map correctly
+        var prev = currentSelectedUnit;
+        currentSelectedUnit = caster;
+        try
+        {
+            ExecuteAbility(ability, targetPosition, target); // your existing private method
+        }
+        finally
+        {
+            currentSelectedUnit = prev;
+        }
+    }
     private void ExecuteAbility(IAbility ability, Vector3 targetPosition, GameObject target = null)
     {
         var caster = currentSelectedUnit;

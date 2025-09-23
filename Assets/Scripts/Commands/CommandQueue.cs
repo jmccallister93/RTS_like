@@ -229,3 +229,27 @@ public class HoldCommand : ICommand
         }
     }
 }
+
+public class AbilityCastCommand : ICommand
+{
+    private readonly GameObject caster;
+    private readonly IAbility ability;
+    private readonly Vector3 targetPos;
+    private readonly GameObject targetObj;
+
+    public AbilityCastCommand(GameObject caster, IAbility ability, Vector3 targetPos, GameObject targetObj)
+    {
+        this.caster = caster;
+        this.ability = ability;
+        this.targetPos = targetPos;
+        this.targetObj = targetObj;
+    }
+
+    public GameObject TargetUnit => caster;
+
+    public void Execute()
+    {
+        if (AbilityManager.Instance == null || caster == null || ability == null) return;
+        AbilityManager.Instance.ExecuteAbilityQueued(caster, ability, targetPos, targetObj);
+    }
+}
