@@ -55,6 +55,15 @@ public class UnitSelectionManager : MonoBehaviour
     {
         CleanupNullUnits();
 
+        // SKIP SELECTION IF ABILITY MANAGER IS TARGETING
+        if (AbilityManager.Instance != null &&
+       (AbilityManager.Instance.IsTargeting || AbilityManager.Instance.IsCasting))
+        {
+            // You can still show the attack cursor if you want
+            HandleAttackCursor();
+            return;
+        }
+
         if (mouse.leftButton.wasPressedThisFrame)
         {
             if (EventSystem.current.IsPointerOverGameObject()) return;
@@ -86,7 +95,14 @@ public class UnitSelectionManager : MonoBehaviour
             }
         }
 
-        if (unitsSelected.Count > 0 )
+        // Handle attack cursor and right-click attacks
+        HandleAttackCursor();
+    }
+
+    // Extract attack cursor logic into separate method
+    private void HandleAttackCursor()
+    {
+        if (unitsSelected.Count > 0)
         {
             Vector2 mousePosition = mouse.position.ReadValue();
             Ray ray = cam.ScreenPointToRay(mousePosition);
@@ -98,7 +114,10 @@ public class UnitSelectionManager : MonoBehaviour
                 if (IsValidAttackTarget(hit.collider.gameObject))
                 {
                     attackCursorVisible = true;
-                    if (mouse.rightButton.wasPressedThisFrame)
+
+                    // Only process right-click attacks if not targeting abilities
+                    if (mouse.rightButton.wasPressedThisFrame &&
+                        (AbilityManager.Instance == null || !AbilityManager.Instance.IsTargeting))
                     {
                         Transform target = hit.transform;
                         foreach (GameObject unit in unitsSelected)

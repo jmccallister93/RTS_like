@@ -107,6 +107,17 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     private static AbilityManager _instance;
     public static AbilityManager Instance => _instance;
     private UnitAbilities currentUnitAbilities;
+    public bool IsTargeting => isTargeting;
+
+    public bool IsCasting
+    {
+        get
+        {
+            for (int i = 0; i < abilitySlots.Length; i++)
+                if (abilitySlots[i].state == AbilityState.Casting) return true;
+            return false;
+        }
+    }
 
     private void Awake()
     {
@@ -530,14 +541,15 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     #region Targeting System
     private void HandleTargeting()
     {
-        if (!isTargeting || currentlyTargeting == null || currentSelectedUnit == null) return;
+        if (!isTargeting || currentlyTargeting == null) return;
+
+        // Ignore UI
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
 
         Vector3 mouseWorldPos = GetMouseWorldPosition();
-
-        // Update preview
         UpdateTargetingPreview(mouseWorldPos);
 
-        // Handle targeting completion
         if (mouse.leftButton.wasPressedThisFrame)
         {
             Debug.Log("Left mouse clicked during targeting");
@@ -559,6 +571,8 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
         // Create preview object if needed
         CreatePreviewObject(ability);
+
+
 
         Debug.Log($"Targeting started. isTargeting: {isTargeting}, currentlyTargeting: {currentlyTargeting?.Name}");
     }
@@ -648,6 +662,9 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
         Debug.Log("Range check passed - executing ability!");
 
+        // IMPORTANT: Store the selected unit before executing
+        GameObject unitToKeepSelected = currentSelectedUnit;
+
         // Execute the ability
         ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
 
@@ -655,6 +672,23 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         isTargeting = false;
         currentlyTargeting = null;
         DestroyPreviewObject();
+
+        // FORCE the unit to stay selected after ability execution
+        if (unitToKeepSelected != null)
+        {
+            Debug.Log($"Forcing {unitToKeepSelected.name} to stay selected");
+            currentSelectedUnit = unitToKeepSelected;
+
+            // Also make sure it's in the selection manager's list
+            if (UnitSelectionManager.Instance != null)
+            {
+                if (!UnitSelectionManager.Instance.unitsSelected.Contains(unitToKeepSelected))
+                {
+                    UnitSelectionManager.Instance.unitsSelected.Clear();
+                    UnitSelectionManager.Instance.unitsSelected.Add(unitToKeepSelected);
+                }
+            }
+        }
     }
 
     private void CreatePreviewObject(IAbility ability)
@@ -739,15 +773,15 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     private void ExecuteAbility(IAbility ability, Vector3 targetPosition, GameObject target = null)
     {
-        Debug.Log($"=== ExecuteAbility({ability.Name}) called with target: {target?.name} ===");
+        var caster = currentSelectedUnit;
 
-        if (currentSelectedUnit == null)
+        if (caster == null)
         {
             Debug.LogError("currentSelectedUnit is null in ExecuteAbility!");
             return;
         }
 
-        if (!ability.CanUse(currentSelectedUnit))
+        if (!ability.CanUse(caster))
         {
             Debug.LogWarning("CanUse failed in ExecuteAbility!");
             return;
@@ -769,54 +803,67 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         if (ability.CastTime > 0)
         {
             Debug.Log($"Starting cast (cast time: {ability.CastTime}s)");
-            StartCoroutine(CastAbility(ability, targetPosition, target, slot));
+            StartCoroutine(CastAbility(caster, ability, targetPosition, target, slot));
         }
         else
         {
             Debug.Log("Executing ability immediately (no cast time)");
-            ability.Execute(currentSelectedUnit, targetPosition, target);
+            ability.Execute(caster, targetPosition, target);
             StartCooldown(slot, ability);
-            OnAbilityUsed?.Invoke(currentSelectedUnit, ability);
+            OnAbilityUsed?.Invoke(caster, ability);
         }
     }
 
-    private IEnumerator CastAbility(IAbility ability, Vector3 targetPosition, GameObject target, AbilitySlot slot)
+    private IEnumerator CastAbility(GameObject caster, IAbility ability, Vector3 targetPosition, GameObject target, AbilitySlot slot)
     {
+       
+
         slot.state = AbilityState.Casting;
-        ability.StartCast(currentSelectedUnit, targetPosition, target);
+        ability.StartCast(caster, targetPosition, target);
 
         float castTime = ability.CastTime;
         float elapsed = 0f;
 
+        Debug.Log($"Cast time: {castTime}, starting countdown...");
+
         while (elapsed < castTime)
         {
-            // Check if casting was interrupted (unit deselected, etc.)
-            if (slot.state != AbilityState.Casting || currentSelectedUnit == null)
+            // Check if casting was interrupted
+            if (slot.state != AbilityState.Casting)
             {
-                ability.Cancel(currentSelectedUnit);
+                Debug.LogWarning("Casting interrupted!");
+                ability.Cancel(caster);
                 yield break;
             }
 
             // Pause handling
             if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
             {
+                Debug.Log("Paused during cast");
                 yield return null;
                 continue;
             }
 
             elapsed += Time.deltaTime;
-
-            // Update casting UI feedback here
+            Debug.Log($"Casting... {elapsed:F2}s / {castTime}s");
 
             yield return null;
         }
 
+        Debug.Log("Cast completed! Executing ability...");
+
         // Complete the cast
-        if (currentSelectedUnit != null)
+        if (caster != null)
         {
-            ability.Execute(currentSelectedUnit, targetPosition, target);
+            Debug.Log($"Calling ability.Execute for {ability.Name}");
+            ability.Execute(caster, targetPosition, target);
             StartCooldown(slot, ability);
-            OnAbilityUsed?.Invoke(currentSelectedUnit, ability);
+            OnAbilityUsed?.Invoke(caster, ability);
+            Debug.Log("Ability execution completed!");
+        }
+        else
+        {
+            Debug.LogError("currentSelectedUnit became null during cast!");
         }
     }
 

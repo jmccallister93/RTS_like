@@ -89,7 +89,8 @@ public class UnitAttackState : StateMachineBehaviour
         // PRIORITY 3: Check if target is null or destroyed
         if (attackController == null || attackController.targetToAttack == null)
         {
-            Debug.Log($"{animator.name} no target - exiting attack to idle");
+//TODO This does keep messing up 
+            //Debug.Log($"{animator.name} no target - exiting attack to idle");
             ExitToIdle(animator);
             return;
         }
@@ -256,7 +257,7 @@ public class UnitAttackState : StateMachineBehaviour
 
     private void PerformAttack(Transform target)
     {
-        Debug.Log($"{attackController.name} attacking {target.name}!");
+        //Debug.Log($"{attackController.name} attacking {target.name}!");
 
         if (attackController != null)
         {
