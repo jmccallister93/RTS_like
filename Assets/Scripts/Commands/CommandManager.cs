@@ -100,6 +100,7 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
                 GameObject clickedObject = hit.collider.gameObject;
                 if (IsValidEnemyTarget(clickedObject, selectedUnits))
                 {
+                    CursorManager.Instance.SetCursor("Attack");
                     foreach (GameObject unit in selectedUnits)
                     {
                         var attackCommand = new AttackTargetCommand(unit, hit.transform);
@@ -193,6 +194,25 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
     {
         currentCommand = command;
         UpdateButtonVisuals();
+
+        switch (currentCommand)
+        {
+            case CommandType.Move:
+                CursorManager.Instance.SetCursor("Move");
+                break;
+            case CommandType.Guard:
+                CursorManager.Instance.SetCursor("Guard");
+                break;
+            case CommandType.AttackMove:
+                CursorManager.Instance.SetCursor("AttackMove");
+                break;
+            case CommandType.Patrol:
+                CursorManager.Instance.SetCursor("Patrol");
+                break;
+            case CommandType.Hold:
+                CursorManager.Instance.SetCursor("Default"); // hold is instant
+                break;
+        }
     }
 
     void UpdateButtonVisuals()

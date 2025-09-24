@@ -5712,6 +5712,7 @@ Transform:
   - {fileID: 1316533991}
   - {fileID: 49862087}
   - {fileID: 1509419815}
+  - {fileID: 1915910176}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1826646672
@@ -6228,6 +6229,82 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1913419517}
   m_CullTransparentMesh: 1
+--- !u!1 &1915910175
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1915910176}
+  - component: {fileID: 1915910177}
+  m_Layer: 0
+  m_Name: CursorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1915910176
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1915910175}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1784389292}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1915910177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1915910175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0b0c15aecfaa7c479b65ec80ab1cc68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CursorManager
+  cursors:
+  - stateName: Move
+    cursorTexture: {fileID: 2800000, guid: 4672f7912b5a2d94fa2b6732a08bdf1e, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: AttackMove
+    cursorTexture: {fileID: 2800000, guid: c7ce9baf26dfc2449960fe1085b48d22, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: Guard
+    cursorTexture: {fileID: 2800000, guid: 472fbc75dab23d349ad9bca7aaae5751, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: Patrol
+    cursorTexture: {fileID: 2800000, guid: dc52b7656328c1043a2ecf6575283326, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: Attack
+    cursorTexture: {fileID: 2800000, guid: 8396de95427ceee45b3961af99a6c304, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: AbilityTargetingEnemy
+    cursorTexture: {fileID: 2800000, guid: e55f97e343cc60e41b7fe9253a6fd132, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: InvalidTarget
+    cursorTexture: {fileID: 2800000, guid: f582c03095abb3147b83f17efd359d41, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: Casting
+    cursorTexture: {fileID: 2800000, guid: 9def93ad1f0486941bed494cf3a49d7e, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: AbilityTargetingAlly
+    cursorTexture: {fileID: 2800000, guid: 9b8d72f363709cc48a7b06bc28a698ff, type: 3}
+    hotspot: {x: 0, y: 0}
+  - stateName: AbilityTargetingArea
+    cursorTexture: {fileID: 2800000, guid: 34146df956f043e4e8254b409dec4cc6, type: 3}
+    hotspot: {x: 0, y: 0}
+  defaultCursor: {fileID: 2800000, guid: c64bcffe1d83b984c876c7d84e465e8a, type: 3}
 --- !u!1 &2030164700
 GameObject:
   m_ObjectHideFlags: 0

@@ -153,6 +153,11 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         if (CurrentSelectedUnit == null || !ability.CanUse(CurrentSelectedUnit))
             return false;
 
+        if (ability.TargetType != TargetType.None && ability.TargetType != TargetType.Self)
+        {
+            CursorManager.Instance.SetCursor("AbilityTargetingEnemy");
+        }
+
         return executor.TryExecuteAbility(ability);
     }
 
