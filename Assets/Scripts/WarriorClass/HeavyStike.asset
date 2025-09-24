@@ -15,12 +15,12 @@ MonoBehaviour:
   abilityName: New Ability
   description: 
   icon: {fileID: 21300000, guid: c712cbb4c50e47b48954c9dbe31ae839, type: 3}
-  cooldown: 5
+  cooldown: 1
   castTime: 0.5
   range: 10
   targetType: 2
   previewColor: {r: 0.9622642, g: 0.4339267, b: 0.4339267, a: 1}
-  lastCastTime: 9.874993
+  lastCastTime: 13.016507
   damageMultiplier: 2
   rageCost: 0
   stunDuration: 1

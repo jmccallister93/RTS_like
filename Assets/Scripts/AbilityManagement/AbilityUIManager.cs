@@ -72,14 +72,14 @@ public class AbilityUIManager : MonoBehaviour
         {
             abilityButtons[slotIndex].interactable = hasUnitSelected && ability != null;
         }
-
+       
         // Update icon
         if (abilityIcons[slotIndex] != null)
         {
             if (ability != null)
             {
                 abilityIcons[slotIndex].sprite = ability.Icon;
-
+             
                 if (!hasUnitSelected)
                 {
                     abilityIcons[slotIndex].color = noSelectionColor;

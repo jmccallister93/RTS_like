@@ -81,7 +81,7 @@ public class MoveCommand : ICommand
             if (unitComponent != null)
             {
                 unitComponent.MoveTo(targetPosition);
-               
+
             }
         }
     }
@@ -250,6 +250,12 @@ public class AbilityCastCommand : ICommand
     public void Execute()
     {
         if (AbilityManager.Instance == null || caster == null || ability == null) return;
-        AbilityManager.Instance.ExecuteAbilityQueued(caster, ability, targetPos, targetObj);
+
+        // Updated to use the AbilityExecutor component
+        var executor = AbilityManager.Instance.GetComponent<AbilityExecutor>();
+        if (executor != null)
+        {
+            executor.ExecuteAbilityQueued(caster, ability, targetPos, targetObj);
+        }
     }
 }

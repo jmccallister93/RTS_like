@@ -719,7 +719,7 @@ Transform:
   m_GameObject: {fileID: 254195092}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.51, y: -0.00006, z: 8.53788}
+  m_LocalPosition: {x: 15.74, y: 0.47, z: 8.53788}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4287,6 +4287,12 @@ GameObject:
   - component: {fileID: 1285341386}
   - component: {fileID: 1285341390}
   - component: {fileID: 1285341391}
+  - component: {fileID: 1285341397}
+  - component: {fileID: 1285341396}
+  - component: {fileID: 1285341395}
+  - component: {fileID: 1285341394}
+  - component: {fileID: 1285341393}
+  - component: {fileID: 1285341392}
   m_Layer: 5
   m_Name: CommandCanvas
   m_TagString: Untagged
@@ -4411,6 +4417,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5c37929226f3064ea756d5ff697ac1e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbilityManager
+  uiManager: {fileID: 1285341393}
+  targetingSystem: {fileID: 1285341394}
+  cooldownManager: {fileID: 1285341397}
+  inputHandler: {fileID: 1285341395}
+  unitTracker: {fileID: 1285341392}
+  executor: {fileID: 1285341396}
+--- !u!114 &1285341392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 358b6dcc392c90547a006f121c08f6c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnitAbilityTracker
+--- !u!114 &1285341393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7dffa3458bd4f1458197e631f1be59d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityUIManager
   abilityCanvas: {fileID: 1285341388}
   hotbarPanel: {fileID: 1400450417}
   abilityButtons:
@@ -4421,7 +4457,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   abilityIcons:
-  - {fileID: 0}
+  - {fileID: 1047963198}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
@@ -4441,18 +4477,66 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 1
-  previewMaterial: {fileID: 0}
-  areaPreviewPrefab: {fileID: 0}
-  pathPreviewPrefab: {fileID: 0}
   readyColor: {r: 1, g: 1, b: 1, a: 1}
   cooldownColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   castingColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   disabledColor: {r: 1, g: 0, b: 0, a: 1}
   noSelectionColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   showTooltips: 1
+--- !u!114 &1285341394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb0d8874e37f58540a873a8c166baccf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityTargetingSystem
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  previewMaterial: {fileID: 0}
+  areaPreviewPrefab: {fileID: 0}
+  pathPreviewPrefab: {fileID: 0}
+--- !u!114 &1285341395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e9617559d3f2db489c9310d973e3576, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityInputHandler
+--- !u!114 &1285341396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8885d692877b5e49aac7c346f072898, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityExecutor
+--- !u!114 &1285341397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 775b2e9a66aa76e48ba65627347ce872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityCooldownManager
 --- !u!1 &1304679629
 GameObject:
   m_ObjectHideFlags: 0

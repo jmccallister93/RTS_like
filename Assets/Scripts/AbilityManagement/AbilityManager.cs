@@ -58,1027 +58,137 @@ public interface IAbility
 
 public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 {
-    [Header("UI References")]
-    public Canvas abilityCanvas;
-    public GameObject hotbarPanel;
-    public Button[] abilityButtons = new Button[6];
-    public Image[] abilityIcons = new Image[6];
-    public Image[] cooldownOverlays = new Image[6];
-    public Text[] cooldownTexts = new Text[6];
+    [Header("Component References")]
+    public AbilityUIManager uiManager;
+    public AbilityTargetingSystem targetingSystem;
+    public AbilityCooldownManager cooldownManager;
+    public AbilityInputHandler inputHandler;
+    public UnitAbilityTracker unitTracker;
+    public AbilityExecutor executor;
 
-    [Header("Targeting")]
-    public LayerMask groundLayer = 1;
-    public Material previewMaterial;
-    public GameObject areaPreviewPrefab;
-    public LineRenderer pathPreviewPrefab;
-
-    [Header("Visual Feedback")]
-    public Color readyColor = Color.white;
-    public Color cooldownColor = Color.gray;
-    public Color castingColor = Color.yellow;
-    public Color disabledColor = Color.red;
-    public Color noSelectionColor = Color.gray;
-
-    [Header("Settings")]
-    public bool showTooltips = true;
-
-    // Core state
-    private AbilitySlot[] abilitySlots = new AbilitySlot[6];
-    private IAbility currentlyTargeting;
-    private bool isTargeting = false;
-    private GameObject previewObject;
-    private Mouse mouse;
-    private Keyboard keyboard;
-    private Camera mainCamera;
-
-    // Current selected unit tracking
-    private GameObject currentSelectedUnit;
-    private Dictionary<GameObject, AbilitySlot[]> unitAbilities = new Dictionary<GameObject, AbilitySlot[]>();
-    private Dictionary<GameObject, Dictionary<IAbility, float>> unitCooldowns = new Dictionary<GameObject, Dictionary<IAbility, float>>();
-
-    // Pause state
-    private bool wasCastingWhenPaused;
-    private IAbility pausedCastingAbility;
-    private GameObject pausedCaster;
-
+    // Events
     public static event Action<GameObject, IAbility> OnAbilityUsed;
     public static event Action<GameObject, IAbility> OnAbilityCooldownStarted;
 
+    // Singleton
     private static AbilityManager _instance;
     public static AbilityManager Instance => _instance;
-    private UnitAbilities currentUnitAbilities;
-    public bool IsTargeting => isTargeting;
 
-    public bool IsCasting
-    {
-        get
-        {
-            for (int i = 0; i < abilitySlots.Length; i++)
-                if (abilitySlots[i].state == AbilityState.Casting) return true;
-            return false;
-        }
-    }
+    // Properties
+    public bool IsTargeting => targetingSystem.IsTargeting;
+    public bool IsCasting => executor.IsCasting;
+    public GameObject CurrentSelectedUnit => unitTracker.CurrentSelectedUnit;
 
     private void Awake()
     {
-        mouse = Mouse.current;
-        keyboard = Keyboard.current;
-        mainCamera = Camera.main;
-
-        InitializeAbilitySlots();
         if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
             return;
         }
         _instance = this;
+
+        InitializeComponents();
     }
 
     private void Start()
     {
-        SetupUI();
+        SetupComponents();
     }
 
     private void Update()
     {
         bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
 
-        //  Still allow selection, hotkeys, and targeting while paused
-        UpdateSelectedUnit();
-        HandleHotkeyInput();
-        HandleTargeting();
+        // Update components (some run while paused, some don't)
+        unitTracker.UpdateSelectedUnit();
+        inputHandler.HandleInput();
+        targetingSystem.HandleTargeting();
 
-        //  Don't tick cooldowns while paused
         if (!paused)
-            UpdateCooldowns();
+        {
+            cooldownManager.UpdateCooldowns();
+        }
 
-        UpdateUI();
+        uiManager.UpdateUI();
     }
 
-    #region Initialization
-
-    private void InitializeAbilitySlots()
+    private void InitializeComponents()
     {
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            abilitySlots[i] = new AbilitySlot();
-        }
+        // Get or create components
+        if (uiManager == null) uiManager = GetComponent<AbilityUIManager>();
+        if (targetingSystem == null) targetingSystem = GetComponent<AbilityTargetingSystem>();
+        if (cooldownManager == null) cooldownManager = GetComponent<AbilityCooldownManager>();
+        if (inputHandler == null) inputHandler = GetComponent<AbilityInputHandler>();
+        if (unitTracker == null) unitTracker = GetComponent<UnitAbilityTracker>();
+        if (executor == null) executor = GetComponent<AbilityExecutor>();
     }
 
-    private void SetupUI()
+    private void SetupComponents()
     {
-        // Ensure we have all UI references
-        if (hotbarPanel == null)
-        {
-            Debug.LogWarning($"{name}: Hotbar panel not assigned!");
-            return;
-        }
+        // Initialize component references to each other
+        uiManager.Initialize(this);
+        targetingSystem.Initialize(this);
+        cooldownManager.Initialize(this);
+        inputHandler.Initialize(this);
+        unitTracker.Initialize(this);
+        executor.Initialize(this);
 
-        // Setup button listeners
-        for (int i = 0; i < abilityButtons.Length; i++)
-        {
-            if (abilityButtons[i] != null)
-            {
-                int index = i; // Capture for lambda
-                abilityButtons[i].onClick.AddListener(() => TryUseAbility(index));
-
-                // Setup UI references in slot
-                abilitySlots[i].uiButton = abilityButtons[i];
-                abilitySlots[i].iconImage = abilityIcons[i];
-                abilitySlots[i].cooldownOverlay = cooldownOverlays[i];
-                abilitySlots[i].cooldownText = cooldownTexts[i];
-            }
-        }
+        // Subscribe to events
+        executor.OnAbilityUsed += (caster, ability) => OnAbilityUsed?.Invoke(caster, ability);
+        executor.OnAbilityCooldownStarted += (caster, ability) => OnAbilityCooldownStarted?.Invoke(caster, ability);
     }
-
-    #endregion
-
-    #region Unit Selection Management
-    public void SetCurrentUnit(GameObject unit)
-    {
-        currentUnitAbilities = unit.GetComponent<UnitAbilities>();
-    }
-    public void UseAbility(int slot, Vector3 targetPos, GameObject target = null)
-    {
-        if (currentUnitAbilities == null) return;
-
-        AbilitySO ability = currentUnitAbilities.GetAbility(slot);
-        if (ability == null) return;
-
-        if (!ability.CanUse(currentUnitAbilities.gameObject)) return;
-
-        ability.StartCast(currentUnitAbilities.gameObject, targetPos, target);
-        ability.Execute(currentUnitAbilities.gameObject, targetPos, target);
-    }
-    private void UpdateSelectedUnit()
-    {
-        GameObject newSelectedUnit = GetCurrentSelectedUnit();
-
-        if (newSelectedUnit != currentSelectedUnit)
-        {
-            // Selection changed
-            if (currentSelectedUnit != null)
-            {
-                // Save current unit's state
-                SaveUnitAbilityState(currentSelectedUnit);
-            }
-
-            currentSelectedUnit = newSelectedUnit;
-
-            if (currentSelectedUnit != null)
-            {
-                // Load new unit's abilities
-                LoadUnitAbilities(currentSelectedUnit);
-            }
-            else
-            {
-                // No unit selected, clear abilities
-                ClearAbilities();
-            }
-
-            // Cancel any active targeting when selection changes
-            CancelTargeting();
-        }
-    }
-
-    private GameObject GetCurrentSelectedUnit()
-    {
-        if (UnitSelectionManager.Instance == null) return null;
-
-        var selectedUnits = UnitSelectionManager.Instance.unitsSelected;
-
-        // Only return a unit if exactly one is selected
-        if (selectedUnits != null && selectedUnits.Count == 1)
-        {
-            return selectedUnits[0];
-        }
-
-        return null;
-    }
-
-    private void SaveUnitAbilityState(GameObject unit)
-    {
-        if (unit == null) return;
-
-        // Save current ability slots for this unit
-        AbilitySlot[] savedSlots = new AbilitySlot[6];
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            savedSlots[i] = new AbilitySlot();
-            savedSlots[i].ability = abilitySlots[i].ability;
-            savedSlots[i].currentCooldown = abilitySlots[i].currentCooldown;
-            savedSlots[i].state = abilitySlots[i].state;
-        }
-        unitAbilities[unit] = savedSlots;
-
-        // Save cooldowns
-        if (!unitCooldowns.ContainsKey(unit))
-        {
-            unitCooldowns[unit] = new Dictionary<IAbility, float>();
-        }
-
-        foreach (var slot in abilitySlots)
-        {
-            if (slot.ability != null)
-            {
-                unitCooldowns[unit][slot.ability] = slot.currentCooldown;
-            }
-        }
-    }
-
-    private void LoadUnitAbilities(GameObject unit)
-    {
-        if (unit == null) return;
-
-        // Check if we have saved abilities for this unit
-        if (unitAbilities.ContainsKey(unit))
-        {
-            // Restore saved state
-            var savedSlots = unitAbilities[unit];
-            for (int i = 0; i < abilitySlots.Length; i++)
-            {
-                abilitySlots[i].ability = savedSlots[i].ability;
-                abilitySlots[i].currentCooldown = savedSlots[i].currentCooldown;
-                abilitySlots[i].state = savedSlots[i].state;
-            }
-        }
-        else
-        {
-            // First time selecting this unit, load default abilities
-            LoadDefaultAbilitiesForUnit(unit);
-        }
-
-        // Restore cooldowns
-        if (unitCooldowns.ContainsKey(unit))
-        {
-            var cooldowns = unitCooldowns[unit];
-            foreach (var slot in abilitySlots)
-            {
-                if (slot.ability != null && cooldowns.ContainsKey(slot.ability))
-                {
-                    slot.currentCooldown = cooldowns[slot.ability];
-                    slot.state = slot.currentCooldown > 0 ? AbilityState.OnCooldown : AbilityState.Ready;
-                }
-            }
-        }
-    }
-
-    private void LoadDefaultAbilitiesForUnit(GameObject unit)
-    {
-       
-
-        // Clear current abilities
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            abilitySlots[i].ability = null;
-            abilitySlots[i].currentCooldown = 0;
-            abilitySlots[i].state = AbilityState.Ready;
-        }
-
-        // Load abilities from UnitAbilities component
-        var unitAbilities = unit.GetComponent<UnitAbilities>();
-        if (unitAbilities != null)
-        {
-            Debug.Log($"Found UnitAbilities with {unitAbilities.abilities.Length} slots");
-            for (int i = 0; i < unitAbilities.abilities.Length && i < abilitySlots.Length; i++)
-            {
-                if (unitAbilities.abilities[i] != null)
-                {
-                    Debug.Log($"Slot {i}: Loading {unitAbilities.abilities[i].Name}");
-                    abilitySlots[i].ability = unitAbilities.abilities[i];
-                    abilitySlots[i].state = AbilityState.Ready;
-
-                    // Force UI update to show icon immediately
-                    UpdateAbilitySlotUI(i);
-                }
-                else
-                {
-                    Debug.Log($"Slot {i}: Empty");
-                }
-            }
-        }
-        else
-        {
-            Debug.LogError($"No UnitAbilities component on {unit.name}!");
-        }
-    }
-
-    private void ClearAbilities()
-    {
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            abilitySlots[i].ability = null;
-            abilitySlots[i].currentCooldown = 0;
-            abilitySlots[i].state = AbilityState.Ready;
-        }
-    }
-
-    #endregion
 
     #region Public API
 
-    public void SetAbilityForUnit(GameObject unit, int slotIndex, IAbility ability)
-    {
-        if (unit == currentSelectedUnit)
-        {
-            SetAbility(slotIndex, ability);
-        }
-        else
-        {
-            // Store for when this unit is selected
-            if (!unitAbilities.ContainsKey(unit))
-            {
-                unitAbilities[unit] = new AbilitySlot[6];
-                for (int i = 0; i < 6; i++)
-                {
-                    unitAbilities[unit][i] = new AbilitySlot();
-                }
-            }
-
-            if (slotIndex >= 0 && slotIndex < 6)
-            {
-                unitAbilities[unit][slotIndex].ability = ability;
-            }
-        }
-    }
-
-    public void SetAbility(int slotIndex, IAbility ability)
-    {
-        if (slotIndex < 0 || slotIndex >= abilitySlots.Length) return;
-
-        abilitySlots[slotIndex].ability = ability;
-        abilitySlots[slotIndex].state = AbilityState.Ready;
-        abilitySlots[slotIndex].currentCooldown = 0;
-    }
-
-    public IAbility GetAbility(int slotIndex)
-    {
-        if (slotIndex < 0 || slotIndex >= abilitySlots.Length) return null;
-        return abilitySlots[slotIndex].ability;
-    }
-
     public bool TryUseAbility(int slotIndex)
     {
-        Debug.Log($"=== TryUseAbility({slotIndex}) called ===");
-
-        // Don't allow abilities if no single unit is selected
-        if (currentSelectedUnit == null)
-        {
-            Debug.LogWarning("No unit selected!");
-            return false;
-        }
-
-        if (slotIndex < 0 || slotIndex >= abilitySlots.Length)
-        {
-            Debug.LogWarning($"Invalid slot index: {slotIndex}");
-            return false;
-        }
-
-        var slot = abilitySlots[slotIndex];
-        if (slot.ability == null)
-        {
-            Debug.LogWarning($"No ability in slot {slotIndex}");
-            return false;
-        }
-
-        Debug.Log($"Found ability: {slot.ability.Name} in slot {slotIndex}");
-        return TryUseAbility(slot.ability);
+        var ability = unitTracker.GetAbility(slotIndex);
+        if (ability == null) return false;
+        return TryUseAbility(ability);
     }
 
     public bool TryUseAbility(IAbility ability)
     {
-        if (ability == null || currentSelectedUnit == null) return false;
-        if (!ability.CanUse(currentSelectedUnit)) return false;
+        if (CurrentSelectedUnit == null || !ability.CanUse(CurrentSelectedUnit))
+            return false;
 
-        CancelTargeting();
+        return executor.TryExecuteAbility(ability);
+    }
 
-        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
-
-        switch (ability.TargetType)
-        {
-            case TargetType.Self:
-                if (paused)
-                {
-                    CommandQueue.Instance.QueueCommand(
-                        new AbilityCastCommand(currentSelectedUnit, ability, currentSelectedUnit.transform.position, currentSelectedUnit));
-                }
-                else
-                {
-                    ExecuteAbility(ability, currentSelectedUnit.transform.position, currentSelectedUnit);
-                }
-                return true;
-
-            case TargetType.Ally:
-            case TargetType.Enemy:
-            case TargetType.Area:
-            case TargetType.Path:
-            case TargetType.Point:
-                Debug.Log($"Starting targeting for {ability.TargetType} ability");
-                StartTargeting(ability);
-                return true;
-
-            default:
-                Debug.LogWarning($"Unknown target type: {ability.TargetType}");
-                return false;
-        }
+    public void SetAbility(int slotIndex, IAbility ability)
+    {
+        unitTracker.SetAbility(slotIndex, ability);
+    }
+    public void SetAbilityForUnit(GameObject unit, int slotIndex, IAbility ability)
+    {
+        unitTracker.SetAbilityForUnit(unit, slotIndex, ability);
+    }
+    public IAbility GetAbility(int slotIndex)
+    {
+        return unitTracker.GetAbility(slotIndex);
     }
 
     public void CancelTargeting()
     {
-        if (isTargeting && currentlyTargeting != null && currentSelectedUnit != null)
-        {
-            currentlyTargeting.Cancel(currentSelectedUnit);
-        }
-
-        isTargeting = false;
-        currentlyTargeting = null;
-        DestroyPreviewObject();
+        targetingSystem.CancelTargeting();
     }
 
     #endregion
 
-    #region Input Handling
-
-    private void HandleHotkeyInput()
-    {
-        // Don't process hotkeys if no unit selected
-        if (currentSelectedUnit == null) return;
-
-        // Don't process hotkeys while typing
-        if (EventSystem.current.currentSelectedGameObject != null)
-        {
-            var inputField = EventSystem.current.currentSelectedGameObject.GetComponent<InputField>();
-            if (inputField != null) return;
-        }
-
-        // Handle number keys 1-6 for ability slots
-        if (keyboard.digit1Key.wasPressedThisFrame) TryUseAbility(0);
-        if (keyboard.digit2Key.wasPressedThisFrame) TryUseAbility(1);
-        if (keyboard.digit3Key.wasPressedThisFrame) TryUseAbility(2);
-        if (keyboard.digit4Key.wasPressedThisFrame) TryUseAbility(3);
-        if (keyboard.digit5Key.wasPressedThisFrame) TryUseAbility(4);
-        if (keyboard.digit6Key.wasPressedThisFrame) TryUseAbility(5);
-
-        // ESC cancels targeting
-        if (keyboard.escapeKey.wasPressedThisFrame)
-        {
-            CancelTargeting();
-        }
-    }
-
-
-
-    #endregion
-
-    #region Targeting System
-    private void HandleTargeting()
-    {
-        if (!isTargeting || currentlyTargeting == null) return;
-
-        // Ignore UI
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return;
-
-        Vector3 mouseWorldPos = GetMouseWorldPosition();
-        UpdateTargetingPreview(mouseWorldPos);
-
-        if (mouse.leftButton.wasPressedThisFrame)
-        {
-            Debug.Log("Left mouse clicked during targeting");
-            CompleteTargeting(mouseWorldPos);
-        }
-        else if (mouse.rightButton.wasPressedThisFrame)
-        {
-            Debug.Log("Right mouse clicked - canceling targeting");
-            CancelTargeting();
-        }
-    }
-
-    private void StartTargeting(IAbility ability)
-    {
-        Debug.Log($"=== StartTargeting({ability.Name}) called ===");
-
-        isTargeting = true;
-        currentlyTargeting = ability;
-
-        // Create preview object if needed
-        CreatePreviewObject(ability);
-
-
-
-        Debug.Log($"Targeting started. isTargeting: {isTargeting}, currentlyTargeting: {currentlyTargeting?.Name}");
-    }
-
-    private bool IsValidTarget(GameObject target, TargetType targetType)
-    {
-        Debug.Log($"=== IsValidTarget({target?.name}, {targetType}) ===");
-
-        if (target == null || currentSelectedUnit == null)
-        {
-            Debug.Log("Target or selected unit is null");
-            return false;
-        }
-
-        var targetUnit = target.GetComponent<Unit>();
-        if (targetUnit == null || !targetUnit.IsAlive())
-        {
-            Debug.Log($"Target {target.name} has no Unit component or is dead");
-            return false;
-        }
-
-        switch (targetType)
-        {
-            case TargetType.Ally:
-                bool isAlly = target.tag == currentSelectedUnit.tag;
-                Debug.Log($"Ally check: target.tag={target.tag}, caster.tag={currentSelectedUnit.tag}, isAlly={isAlly}");
-                return isAlly;
-
-            case TargetType.Enemy:
-                bool isEnemy = target.tag != currentSelectedUnit.tag &&
-                               ((currentSelectedUnit.tag == "Player" && target.tag == "Enemy") ||
-                                (currentSelectedUnit.tag == "Enemy" && target.tag == "Player"));
-                Debug.Log($"Enemy check: target.tag={target.tag}, caster.tag={currentSelectedUnit.tag}, isEnemy={isEnemy}");
-                return isEnemy;
-
-            default:
-                Debug.Log($"Unknown target type: {targetType}");
-                return false;
-        }
-    }
-
-    private void CompleteTargeting(Vector3 targetPosition)
-    {
-        if (currentlyTargeting == null || currentSelectedUnit == null) return;
-
-        GameObject targetObject = null;
-        if (currentlyTargeting.TargetType == TargetType.Ally || currentlyTargeting.TargetType == TargetType.Enemy)
-        {
-            targetObject = GetTargetAtPosition(targetPosition);
-            if (targetObject == null || !IsValidTarget(targetObject, currentlyTargeting.TargetType))
-            {
-                CancelTargeting();
-                return;
-            }
-        }
-
-        // Range check
-        float distance = Vector3.Distance(currentSelectedUnit.transform.position, targetPosition);
-        if (distance > currentlyTargeting.Range)
-        {
-            CancelTargeting();
-            return;
-        }
-
-        var caster = currentSelectedUnit;
-        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
-
-        if (paused)
-        {
-            //  Queue the ability for after resume
-            CommandQueue.Instance.QueueCommand(
-                new AbilityCastCommand(caster, currentlyTargeting, targetPosition, targetObject));
-        }
-        else
-        {
-            // Normal immediate path
-            ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
-        }
-
-        // Clean up targeting/preview regardless
-        isTargeting = false;
-        currentlyTargeting = null;
-        DestroyPreviewObject();
-
-        // keep selection stable (your existing logic)
-        if (caster != null)
-        {
-            currentSelectedUnit = caster;
-            if (UnitSelectionManager.Instance != null &&
-                !UnitSelectionManager.Instance.unitsSelected.Contains(caster))
-            {
-                UnitSelectionManager.Instance.unitsSelected.Clear();
-                UnitSelectionManager.Instance.unitsSelected.Add(caster);
-            }
-        }
-    }
-
-    private void CreatePreviewObject(IAbility ability)
-    {
-        var preview = ability.GetPreviewObject();
-        if (preview != null)
-        {
-            previewObject = Instantiate(preview);
-        }
-        else
-        {
-            // Create default preview based on targeting type
-            switch (ability.TargetType)
-            {
-                case TargetType.Area:
-                    if (areaPreviewPrefab != null)
-                    {
-                        previewObject = Instantiate(areaPreviewPrefab);
-                        var renderer = previewObject.GetComponent<Renderer>();
-                        if (renderer != null)
-                        {
-                            renderer.material.color = ability.PreviewColor;
-                        }
-                    }
-                    break;
-
-                case TargetType.Path:
-                    if (pathPreviewPrefab != null)
-                    {
-                        previewObject = Instantiate(pathPreviewPrefab.gameObject);
-                        var lineRenderer = previewObject.GetComponent<LineRenderer>();
-                        if (lineRenderer != null)
-                        {
-                            lineRenderer.startColor = ability.PreviewColor;
-                            lineRenderer.endColor = ability.PreviewColor;
-                        }
-                    }
-                    break;
-            }
-        }
-    }
-
-    private void UpdateTargetingPreview(Vector3 mousePosition)
-    {
-        if (previewObject == null || currentSelectedUnit == null) return;
-
-        switch (currentlyTargeting.TargetType)
-        {
-            case TargetType.Area:
-                previewObject.transform.position = mousePosition;
-                break;
-
-            case TargetType.Path:
-                var lineRenderer = previewObject.GetComponent<LineRenderer>();
-                if (lineRenderer != null)
-                {
-                    lineRenderer.positionCount = 2;
-                    lineRenderer.SetPosition(0, currentSelectedUnit.transform.position);
-                    lineRenderer.SetPosition(1, mousePosition);
-                }
-                break;
-
-            case TargetType.Point:
-                // Could show a simple marker
-                previewObject.transform.position = mousePosition;
-                break;
-        }
-    }
-
-    private void DestroyPreviewObject()
-    {
-        if (previewObject != null)
-        {
-            Destroy(previewObject);
-            previewObject = null;
-        }
-    }
-
-    #endregion
-
-    #region Ability Execution
-    public void ExecuteAbilityQueued(GameObject caster, IAbility ability, Vector3 targetPosition, GameObject target = null)
-    {
-        // Temporarily treat this caster as selected so slot/cooldowns map correctly
-        var prev = currentSelectedUnit;
-        currentSelectedUnit = caster;
-        try
-        {
-            ExecuteAbility(ability, targetPosition, target); // your existing private method
-        }
-        finally
-        {
-            currentSelectedUnit = prev;
-        }
-    }
-    private void ExecuteAbility(IAbility ability, Vector3 targetPosition, GameObject target = null)
-    {
-        var caster = currentSelectedUnit;
-
-        if (caster == null)
-        {
-            Debug.LogError("currentSelectedUnit is null in ExecuteAbility!");
-            return;
-        }
-
-        if (!ability.CanUse(caster))
-        {
-            Debug.LogWarning("CanUse failed in ExecuteAbility!");
-            return;
-        }
-
-        // Get the ability slot for cooldown tracking
-        int slotIndex = GetAbilitySlotIndex(ability);
-        Debug.Log($"Ability slot index: {slotIndex}");
-
-        if (slotIndex == -1)
-        {
-            Debug.LogError("Ability not found in slots!");
-            return;
-        }
-
-        var slot = abilitySlots[slotIndex];
-
-        // Start casting or execute immediately
-        if (ability.CastTime > 0)
-        {
-            Debug.Log($"Starting cast (cast time: {ability.CastTime}s)");
-            StartCoroutine(CastAbility(caster, ability, targetPosition, target, slot));
-        }
-        else
-        {
-            Debug.Log("Executing ability immediately (no cast time)");
-            ability.Execute(caster, targetPosition, target);
-            StartCooldown(slot, ability);
-            OnAbilityUsed?.Invoke(caster, ability);
-        }
-    }
-
-    private IEnumerator CastAbility(GameObject caster, IAbility ability, Vector3 targetPosition, GameObject target, AbilitySlot slot)
-    {
-       
-
-        slot.state = AbilityState.Casting;
-        ability.StartCast(caster, targetPosition, target);
-
-        float castTime = ability.CastTime;
-        float elapsed = 0f;
-
-        Debug.Log($"Cast time: {castTime}, starting countdown...");
-
-        while (elapsed < castTime)
-        {
-            // Check if casting was interrupted
-            if (slot.state != AbilityState.Casting)
-            {
-                Debug.LogWarning("Casting interrupted!");
-                ability.Cancel(caster);
-                yield break;
-            }
-
-            // Pause handling
-            if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-            {
-                Debug.Log("Paused during cast");
-                yield return null;
-                continue;
-            }
-
-            elapsed += Time.deltaTime;
-            Debug.Log($"Casting... {elapsed:F2}s / {castTime}s");
-
-            yield return null;
-        }
-
-        Debug.Log("Cast completed! Executing ability...");
-
-        // Complete the cast
-        if (caster != null)
-        {
-            Debug.Log($"Calling ability.Execute for {ability.Name}");
-            ability.Execute(caster, targetPosition, target);
-            StartCooldown(slot, ability);
-            OnAbilityUsed?.Invoke(caster, ability);
-            Debug.Log("Ability execution completed!");
-        }
-        else
-        {
-            Debug.LogError("currentSelectedUnit became null during cast!");
-        }
-    }
-
-    private void StartCooldown(AbilitySlot slot, IAbility ability)
-    {
-        slot.state = AbilityState.OnCooldown;
-        slot.currentCooldown = ability.Cooldown;
-
-        if (currentSelectedUnit != null)
-        {
-            OnAbilityCooldownStarted?.Invoke(currentSelectedUnit, ability);
-        }
-    }
-
-    #endregion
-
-    #region Utility Methods
-
-    private Vector3 GetMouseWorldPosition()
-    {
-        Ray ray = mainCamera.ScreenPointToRay(mouse.position.ReadValue());
-
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
-        {
-            return hit.point;
-        }
-
-        // Fallback to ground plane
-        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-        if (groundPlane.Raycast(ray, out float distance))
-        {
-            return ray.GetPoint(distance);
-        }
-
-        return Vector3.zero;
-    }
-
-    private GameObject GetTargetAtPosition(Vector3 position)
-    {
-        Ray ray = mainCamera.ScreenPointToRay(mouse.position.ReadValue());
-
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            return hit.collider.gameObject;
-        }
-
-        return null;
-    }
-
-   
-
-    private int GetAbilitySlotIndex(IAbility ability)
-    {
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            if (abilitySlots[i].ability == ability)
-                return i;
-        }
-        return -1;
-    }
-
-    #endregion
-
-    #region UI Updates
-
-    private void UpdateCooldowns()
-    {
-        if (currentSelectedUnit == null) return;
-
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            var slot = abilitySlots[i];
-            if (slot.ability == null) continue;
-
-            if (slot.state == AbilityState.OnCooldown)
-            {
-                slot.currentCooldown -= Time.deltaTime;
-
-                if (slot.currentCooldown <= 0)
-                {
-                    slot.currentCooldown = 0;
-                    slot.state = AbilityState.Ready;
-                }
-            }
-
-            // Update ability state based on conditions
-            if (slot.state == AbilityState.Ready && !slot.ability.CanUse(currentSelectedUnit))
-            {
-                slot.state = AbilityState.Disabled;
-            }
-            else if (slot.state == AbilityState.Disabled && slot.ability.CanUse(currentSelectedUnit))
-            {
-                slot.state = AbilityState.Ready;
-            }
-        }
-    }
-
-    private void UpdateUI()
-    {
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            UpdateAbilitySlotUI(i);
-        }
-    }
-
-    private void UpdateAbilitySlotUI(int slotIndex)
-    {
-        if (slotIndex < 0 || slotIndex >= abilitySlots.Length) return;
-
-        var slot = abilitySlots[slotIndex];
-        bool hasUnitSelected = currentSelectedUnit != null;
-
-        // Enable/disable button based on unit selection
-        if (slot.uiButton != null)
-        {
-            slot.uiButton.interactable = hasUnitSelected && slot.ability != null;
-        }
-
-        // Update icon - AUTOMATICALLY PULL FROM ABILITY SO
-        if (slot.iconImage != null)
-        {
-            if (slot.ability != null)
-            {
-                // AUTOMATICALLY SET ICON FROM ABILITY
-                if (slot.ability.Icon != null)
-                {
-                    slot.iconImage.sprite = slot.ability.Icon;
-                    Debug.Log($"Set icon for slot {slotIndex} from ability {slot.ability.Name}");
-                }
-                else
-                {
-                    Debug.LogWarning($"Ability {slot.ability.Name} has no icon assigned!");
-                    slot.iconImage.sprite = null;
-                }
-
-                // Grey out icon if no unit selected or ability not usable
-                if (!hasUnitSelected)
-                {
-                    slot.iconImage.color = noSelectionColor;
-                }
-                else
-                {
-                    slot.iconImage.color = GetStateColor(slot.state);
-                }
-            }
-            else
-            {
-                slot.iconImage.sprite = null;
-                slot.iconImage.color = Color.clear;
-            }
-        }
-
-        // Update cooldown overlay
-        if (slot.cooldownOverlay != null)
-        {
-            if (slot.state == AbilityState.OnCooldown && slot.ability != null && hasUnitSelected)
-            {
-                float fillAmount = slot.currentCooldown / slot.ability.Cooldown;
-                slot.cooldownOverlay.fillAmount = fillAmount;
-                slot.cooldownOverlay.gameObject.SetActive(true);
-            }
-            else
-            {
-                slot.cooldownOverlay.gameObject.SetActive(false);
-            }
-        }
-
-        // Update cooldown text
-        if (slot.cooldownText != null)
-        {
-            if (slot.state == AbilityState.OnCooldown && hasUnitSelected)
-            {
-                slot.cooldownText.text = Mathf.Ceil(slot.currentCooldown).ToString();
-                slot.cooldownText.gameObject.SetActive(true);
-            }
-            else
-            {
-                slot.cooldownText.gameObject.SetActive(false);
-            }
-        }
-    }
-
-    private Color GetStateColor(AbilityState state)
-    {
-        switch (state)
-        {
-            case AbilityState.Ready:
-                return readyColor;
-            case AbilityState.Casting:
-                return castingColor;
-            case AbilityState.OnCooldown:
-                return cooldownColor;
-            case AbilityState.Disabled:
-                return disabledColor;
-            default:
-                return readyColor;
-        }
-    }
-
-    #endregion
-
-    #region Pause System Integration
+    #region Pause System
 
     public void OnPause()
     {
-        // Store casting state if needed
-        for (int i = 0; i < abilitySlots.Length; i++)
-        {
-            if (abilitySlots[i].state == AbilityState.Casting)
-            {
-                wasCastingWhenPaused = true;
-                pausedCastingAbility = abilitySlots[i].ability;
-                pausedCaster = currentSelectedUnit;
-                break;
-            }
-        }
+        executor.OnPause();
+        targetingSystem.OnPause();
     }
 
     public void OnResume()
     {
-        // Restore casting state if needed
-        if (wasCastingWhenPaused)
-        {
-            // Handle resuming cast or cancel based on game rules
-            wasCastingWhenPaused = false;
-            pausedCastingAbility = null;
-            pausedCaster = null;
-        }
+        executor.OnResume();
+        targetingSystem.OnResume();
     }
 
     #endregion
-
-
 }
