@@ -1,50 +1,68 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Warrior/Heavy Strike")]
-public class HeavyStrikeSO: AbilitySO
+public class HeavyStrikeSO : SingleTargetEnemyAbility, IDamageEffect, IDebuffEffect
 {
     [Header("Heavy Strike Settings")]
     public float damageMultiplier = 2.0f;
     public int rageCost = 0;
-    public float stunDuration = 1.0f;
 
-    public override bool CanUse(GameObject caster)
+    [Header("Stun Effect")]
+    public StatusEffect stunEffect;
+
+    void OnEnable()
     {
-        var unit = caster.GetComponent<Unit>();
-        var warriorClass = caster.GetComponent<WarriorClass>();
-
-        bool canUse = unit != null && unit.IsAlive() &&
-                  warriorClass != null && warriorClass.CanSpendResource(rageCost);
-
-        return canUse;
+        // Set up the stun effect if not configured
+        if (stunEffect.name == null || stunEffect.name == "")
+        {
+            stunEffect.name = "Heavy Strike Stun";
+            stunEffect.duration = 1.0f;
+            stunEffect.stunned = true;
+            stunEffect.modifiesStats = false;
+        }
     }
 
-    public override void Execute(GameObject caster, Vector3 targetPosition, GameObject target = null)
+    protected override void ExecuteOnTarget(GameObject caster, GameObject target)
     {
-        Debug.Log($"Heavy Strike Execute called! Target: {target?.name}");
-
-        if (target == null)
-        {
-            Debug.LogWarning("Heavy Strike: No target!");
-            return;
-        }
-
-        var casterUnit = caster.GetComponent<Unit>();
-        var targetUnit = target.GetComponent<Unit>();
-        var characterManager = caster.GetComponent<CharacterManager>();
-        var warriorClass = caster.GetComponent<WarriorClass>();
-
-        if (casterUnit == null || targetUnit == null || !targetUnit.IsAlive()) return;
-        if (warriorClass == null || !warriorClass.SpendResource(rageCost)) return;
-
-        // Calculate damage
-        float baseDamage = characterManager?.MeleeDamage ?? 10f;
-        float totalDamage = baseDamage * damageMultiplier;
-
-
         // Deal damage
-        targetUnit.TakeDamage(totalDamage);
+        float damage = CalculateDamage(caster, target);
+        ApplyDamage(caster, target, damage);
 
-        lastCastTime = Time.time;
+        // Apply stun
+        ApplyDebuff(caster, target);
+    }
+
+    protected override bool ConsumeResources(GameObject caster)
+    {
+        return ResourceConsumptionUtils.ConsumeWarriorRage(caster, rageCost);
+    }
+
+    // IDamageEffect implementation
+    public float CalculateDamage(GameObject caster, GameObject target)
+    {
+        var characterManager = caster.GetComponent<CharacterManager>();
+        float baseDamage = characterManager?.MeleeDamage ?? 10f;
+        return baseDamage * damageMultiplier;
+    }
+
+    public void ApplyDamage(GameObject caster, GameObject target, float damage)
+    {
+        var characterManager = target.GetComponent<CharacterManager>();
+        if (characterManager != null)
+        {
+            characterManager.TakeDamage(damage);
+            Debug.Log($"Heavy Strike: {caster.name} dealt {damage} damage to {target.name}");
+        }
+    }
+
+    // IDebuffEffect implementation
+    public void ApplyDebuff(GameObject caster, GameObject target)
+    {
+        var statusManager = target.GetComponent<StatusEffectManager>();
+        if (statusManager != null)
+        {
+            statusManager.AddStatusEffect(stunEffect, caster);
+            Debug.Log($"Heavy Strike: {target.name} is stunned for {stunEffect.duration} seconds");
+        }
     }
 }

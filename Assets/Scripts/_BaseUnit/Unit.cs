@@ -94,6 +94,12 @@ public class Unit : MonoBehaviour
         // Apply damage through CharacterManager
         characterManager.TakeDamage(damageAmount);
 
+        // Display floating damage text
+        DisplayFloatingDamageText(damageAmount);
+    }
+
+    public void DisplayFloatingDamageText(float damageAmount)
+    {
         // Spawn floating damage text
         if (floatingDamageTextPrefab != null)
         {
@@ -111,6 +117,30 @@ public class Unit : MonoBehaviour
             }
         }
     }
+
+    // Add this method to your Unit class for healing text (optional)
+    public void DisplayFloatingHealingText(float healingAmount)
+    {
+        // Spawn floating healing text (you could use a different prefab or modify the text color)
+        if (floatingDamageTextPrefab != null) // Could be renamed to floatingTextPrefab
+        {
+            Vector3 spawnPos = floatingTextSpawnPoint != null
+                ? floatingTextSpawnPoint.position
+                : transform.position + Vector3.up * 2f;
+
+            spawnPos += new Vector3(Random.Range(-0.2f, 0.2f), 0f, Random.Range(-0.2f, 0.2f));
+
+            GameObject textObj = Instantiate(floatingDamageTextPrefab, spawnPos, Quaternion.identity);
+            var fdt = textObj.GetComponent<FloatingDamageText>();
+            if (fdt != null)
+            {
+                // You might want to modify FloatingDamageText to handle healing differently
+                // For now, we'll just pass a negative value or create a separate initialization method
+                fdt.InitializeHealing(healingAmount);
+            }
+        }
+    }
+
 
     private void HandleDeath()
     {
@@ -130,6 +160,8 @@ public class Unit : MonoBehaviour
     public bool IsAlive() => characterManager?.IsAlive ?? false;
     public bool IsDead() => !IsAlive();
     public bool IsHoldingPosition() => isHoldingPosition;
+
+
 
     public void MoveTo(Vector3 targetPosition)
     {

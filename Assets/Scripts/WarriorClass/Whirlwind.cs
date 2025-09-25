@@ -1,87 +1,56 @@
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Warrior/Whirlwind")]
-public class WhirlwindSO : AbilitySO
+public class WhirlwindSO : SelfAreaAbility, IDamageEffect
 {
     [Header("Whirlwind Settings")]
     public float damageMultiplier = 1.5f;
-    public int rageCost = 0;
+    public int rageCost = 10;
 
-    private void OnEnable()
+    void OnEnable()
     {
-        // Set up Whirlwind as an area effect ability
-        targetType = TargetType.Area;
-        areaRadius = 3f; // 3 unit radius around the caster
-        useAreaRadiusForIndicator = true; // Use area radius for the indicator circle
-        range = 0f; // Whirlwind is cast at caster position, so no range needed
+        // Configure as area effect
+        areaRadius = 3f;
     }
 
-    public override bool CanUse(GameObject caster)
+    protected override void ExecuteAreaEffect(GameObject caster, Vector3 center, System.Collections.Generic.List<GameObject> targets)
     {
-        var unit = caster.GetComponent<Unit>();
-        var warriorClass = caster.GetComponent<WarriorClass>();
-        bool canUse = unit != null && unit.IsAlive() &&
-                      warriorClass != null && warriorClass.CanSpendResource(rageCost);
-        return canUse;
-    }
+        Debug.Log($"Whirlwind hit {targets.Count} enemies");
 
-    public override void Execute(GameObject caster, Vector3 targetPosition, GameObject target = null)
-    {
-        Debug.Log($"Whirlwind Execute called!");
-
-        var casterUnit = caster.GetComponent<Unit>();
-        var characterManager = caster.GetComponent<CharacterManager>();
-        var warriorClass = caster.GetComponent<WarriorClass>();
-
-        if (casterUnit == null || !casterUnit.IsAlive()) return;
-        if (warriorClass == null || !warriorClass.SpendResource(rageCost)) return;
-
-        // Calculate damage
-        float baseDamage = characterManager?.MeleeDamage ?? 10f;
-        float totalDamage = baseDamage * damageMultiplier;
-
-        // Use caster position as the center of the whirlwind
-        Vector3 whirlwindCenter = caster.transform.position;
-
-        // Apply area effect damage
-        int enemiesHit = 0;
-        ExecuteAreaEffect(caster, whirlwindCenter, areaRadius, (hitTarget) =>
+        foreach (GameObject target in targets)
         {
-            var targetUnit = hitTarget.GetComponent<Unit>();
-            if (targetUnit != null)
-            {
-                targetUnit.TakeDamage(totalDamage);
-                enemiesHit++;
-                Debug.Log($"Whirlwind hit {hitTarget.name} for {totalDamage} damage");
-            }
-        });
+            float damage = CalculateDamage(caster, target);
+            ApplyDamage(caster, target, damage);
+        }
+    }
 
-        Debug.Log($"Whirlwind hit {enemiesHit} enemies");
-        lastCastTime = Time.time;
-
-        // Optional: Add visual/audio effects here
-        // PlayWhirlwindEffect(whirlwindCenter);
+    protected override bool ConsumeResources(GameObject caster)
+    {
+        return ResourceConsumptionUtils.ConsumeWarriorRage(caster, rageCost);
     }
 
     protected override bool IsValidAreaTarget(GameObject caster, GameObject target)
     {
         if (target == caster) return false; // Don't hit self
-
-        // Only hit enemies
-        var casterTag = caster.tag;
-        var targetTag = target.tag;
-
-        return targetTag != casterTag &&
-               ((casterTag == "Player" && targetTag == "Enemy") ||
-                (casterTag == "Enemy" && targetTag == "Player"));
+        if (!AbilityTargetUtils.IsValidUnit(target)) return false;
+        return AbilityTargetUtils.IsEnemy(caster, target);
     }
 
-    // Optional: Method to play whirlwind visual effects
-    private void PlayWhirlwindEffect(Vector3 center)
+    // IDamageEffect implementation
+    public float CalculateDamage(GameObject caster, GameObject target)
     {
-        // You can instantiate particle effects, play sounds, etc. here
-        // Example:
-        // GameObject effect = Instantiate(whirlwindEffectPrefab, center, Quaternion.identity);
-        // Destroy(effect, 2f);
+        var characterManager = caster.GetComponent<CharacterManager>();
+        float baseDamage = characterManager?.MeleeDamage ?? 10f;
+        return baseDamage * damageMultiplier;
+    }
+
+    public void ApplyDamage(GameObject caster, GameObject target, float damage)
+    {
+        var characterManager = target.GetComponent<CharacterManager>();
+        if (characterManager != null)
+        {
+            characterManager.TakeDamage(damage);
+            Debug.Log($"Whirlwind: {caster.name} dealt {damage} damage to {target.name}");
+        }
     }
 }

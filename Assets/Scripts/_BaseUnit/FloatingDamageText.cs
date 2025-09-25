@@ -49,6 +49,16 @@ public class FloatingDamageText : MonoBehaviour
         Destroy(gameObject, fadeDuration);
     }
 
+    public void InitializeHealing(float healingAmount)
+    {
+        textMesh.text = "+" + healingAmount.ToString("0");
+
+        // Set healing text to green regardless of target
+        textMesh.color = Color.green;
+
+        Destroy(gameObject, fadeDuration);
+    }
+
     void LateUpdate()
     {
         if (targetCamera)
