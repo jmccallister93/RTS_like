@@ -11,9 +11,6 @@ public class Unit : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private HealthTracker healthBar;
 
-    [Header("Death Settings")]
-    [SerializeField] private float corpseLifetime = 10f;
-
     [Header("Damage Text")]
     [SerializeField] private GameObject floatingDamageTextPrefab;
     [SerializeField] private Transform floatingTextSpawnPoint;
@@ -28,6 +25,8 @@ public class Unit : MonoBehaviour
 
     private bool isHoldingPosition = false;
 
+    private RayCastManager rayCastManager;
+
     void Start()
     {
         // Initialize components
@@ -35,6 +34,7 @@ public class Unit : MonoBehaviour
         attackController = GetComponent<AttackController>();
         characterManager = GetComponent<CharacterManager>();
         unitAnimator = GetComponent<Animator>();
+
 
         // Initialize health
         //currentHealth = maxHealth;
@@ -210,4 +210,7 @@ public class Unit : MonoBehaviour
     {
         if (isHoldingPosition) isHoldingPosition = false;
     }
+
+
+
 }

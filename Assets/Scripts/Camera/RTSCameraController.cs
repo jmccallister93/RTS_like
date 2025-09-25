@@ -45,8 +45,8 @@ public class RTSCameraController : MonoBehaviour
     [SerializeField] float rotationSpeed = 50f; // Degrees per second
     Vector3 newRotation;
 
-    [Header("Edge Scrolling Movement")]
-    [SerializeField] float edgeSize = 50f;
+    //[Header("Edge Scrolling Movement")]
+    //[SerializeField] float edgeSize = 50f;
     
     public Texture2D cursorArrowUp;
     public Texture2D cursorArrowDown;

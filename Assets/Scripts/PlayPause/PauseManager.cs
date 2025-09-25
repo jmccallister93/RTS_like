@@ -95,10 +95,13 @@ public class PauseManager : MonoBehaviour
         disabledBehaviours.Clear();
 
         // Find all active, enabled MonoBehaviours implementing IPausable
-        var pausableBehaviours = FindObjectsOfType<MonoBehaviour>(true)
-            .Where(b => b.isActiveAndEnabled)
-            .Where(b => b is IPausable)
-            .ToList();
+        var pausableBehaviours = FindObjectsByType<MonoBehaviour>(
+            FindObjectsInactive.Include,       // replaces "true"
+            FindObjectsSortMode.None           // faster if you don’t need sorting
+        )
+        .Where(b => b.isActiveAndEnabled)
+        .Where(b => b is IPausable)
+        .ToList();
 
         foreach (var mb in pausableBehaviours)
         {
@@ -127,9 +130,12 @@ public class PauseManager : MonoBehaviour
         disabledBehaviours.Clear();
 
         // Call OnResume on all IPausable (both re-enabled ones and those that ran during pause)
-        var pausableBehaviours = FindObjectsOfType<MonoBehaviour>(true)
-            .Where(b => b is IPausable)
-            .ToList();
+        var pausableBehaviours = FindObjectsByType<MonoBehaviour>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None
+        )
+        .Where(b => b is IPausable)
+        .ToList();
 
         foreach (var mb in pausableBehaviours)
         {
@@ -142,7 +148,7 @@ public class PauseManager : MonoBehaviour
         pausedAgents.Clear();
         agentPauseData.Clear();
 
-        foreach (var agent in FindObjectsOfType<NavMeshAgent>())
+        foreach (var agent in FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None))
         {
             if (agent != null && agent.enabled)
             {
@@ -183,7 +189,10 @@ public class PauseManager : MonoBehaviour
         pausedAnimators.Clear();
         animatorSpeeds.Clear();
 
-        foreach (var animator in FindObjectsOfType<Animator>())
+        foreach (var animator in FindObjectsByType<Animator>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None
+        ))
         {
             if (animator != null && animator.enabled && !animatorSpeeds.ContainsKey(animator))
             {

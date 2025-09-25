@@ -827,6 +827,50 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &312405933
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 312405934}
+  - component: {fileID: 312405935}
+  m_Layer: 0
+  m_Name: RayCastManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &312405934
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 312405933}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1784389292}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &312405935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 312405933}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c031404062d73e14fb7e0782afe07691, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RayCastManager
 --- !u!1 &325540924
 GameObject:
   m_ObjectHideFlags: 0
@@ -1222,6 +1266,59 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 371131769}
   m_CullTransparentMesh: 1
+--- !u!1 &396405144
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 396405145}
+  - component: {fileID: 396405146}
+  m_Layer: 7
+  m_Name: UnitHoverManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &396405145
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396405144}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1784389292}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &396405146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 396405144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38c61598aa2016c42a4bc07e2b24a410, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UnitHoverManager
+  playerHoverColor: {r: 0, g: 1, b: 0, a: 1}
+  enemyHoverColor: {r: 1, g: 0, b: 0, a: 1}
+  hoverCircleRadius: 0.6
+  hoverCircleWidth: 0.12
+  circleSegments: 32
+  unitLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  raycastDistance: 100
 --- !u!1001 &426828593
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1238,6 +1335,10 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 963194227}
+    - target: {fileID: 1970063198321935167, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 8.4
+      objectReference: {fileID: 0}
     - target: {fileID: 2554461699235619137, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_Name
       value: Enemy
@@ -1252,7 +1353,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 20.58
+      value: 25.81
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3490,7 +3591,7 @@ GameObject:
   - component: {fileID: 914088667}
   - component: {fileID: 914088666}
   - component: {fileID: 914088665}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4293,6 +4394,7 @@ GameObject:
   - component: {fileID: 1285341394}
   - component: {fileID: 1285341393}
   - component: {fileID: 1285341392}
+  - component: {fileID: 1285341398}
   m_Layer: 5
   m_Name: CommandCanvas
   m_TagString: Untagged
@@ -4423,6 +4525,7 @@ MonoBehaviour:
   inputHandler: {fileID: 1285341395}
   unitTracker: {fileID: 1285341392}
   executor: {fileID: 1285341396}
+  abilityIndicator: {fileID: 1285341398}
 --- !u!114 &1285341392
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4458,9 +4561,9 @@ MonoBehaviour:
   - {fileID: 0}
   abilityIcons:
   - {fileID: 1047963198}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1913419520}
+  - {fileID: 1304679632}
+  - {fileID: 1317252469}
   - {fileID: 0}
   - {fileID: 0}
   cooldownOverlays:
@@ -4537,6 +4640,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 775b2e9a66aa76e48ba65627347ce872, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AbilityCooldownManager
+--- !u!114 &1285341398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1285341385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 063358cacb56a654fb0fe3a7515e66dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityIndicator
+  indicatorMaterial: {fileID: 0}
+  lineWidth: 0.15
+  circleSegments: 32
+  allyColor: {r: 0, g: 1, b: 0, a: 0.4}
+  enemyColor: {r: 1, g: 0, b: 0, a: 0.4}
+  areaColor: {r: 0, g: 0.5, b: 1, a: 0.4}
+  pathColor: {r: 1, g: 1, b: 0, a: 0.4}
 --- !u!1 &1304679629
 GameObject:
   m_ObjectHideFlags: 0
@@ -5713,6 +5835,8 @@ Transform:
   - {fileID: 49862087}
   - {fileID: 1509419815}
   - {fileID: 1915910176}
+  - {fileID: 312405934}
+  - {fileID: 396405145}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1826646672
@@ -6607,7 +6731,6 @@ MonoBehaviour:
   maxZoomY: 100
   useMouseWheelZoom: 1
   rotationSpeed: 50
-  edgeSize: 50
   cursorArrowUp: {fileID: 2800000, guid: cc32a8e215d6b694bb54e861fd9ff1e4, type: 3}
   cursorArrowDown: {fileID: 2800000, guid: 666f98ee012f8824095fad597d15a454, type: 3}
   cursorArrowLeft: {fileID: 2800000, guid: 49bc55302886c6b4c8f9040fa798e67d, type: 3}
@@ -6646,7 +6769,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.057
+      value: 7.03
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6654,7 +6777,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 9.936
+      value: 19.86
       objectReference: {fileID: 0}
     - target: {fileID: 6665392516466649474, guid: a64115e812b3a7047b7e0bf288791552, type: 3}
       propertyPath: m_LocalRotation.w

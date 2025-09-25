@@ -75,7 +75,7 @@ public class AbilityTargetingSystem : MonoBehaviour
         DestroyPreviewObject();
     }
 
-    private void CompleteTargeting(Vector3 targetPosition)
+    public void CompleteTargeting(Vector3 targetPosition)
     {
         if (currentlyTargeting == null || abilityManager.CurrentSelectedUnit == null) return;
 

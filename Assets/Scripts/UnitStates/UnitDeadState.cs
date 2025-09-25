@@ -112,7 +112,7 @@ public class UnitDeadState : StateMachineBehaviour
     private void NotifyUnitsOfDeath(GameObject deadUnit)
     {
         // Find all units in the scene and clear this dead unit as their target
-        AttackController[] allAttackControllers = FindObjectsOfType<AttackController>();
+        AttackController[] allAttackControllers = Object.FindObjectsByType<AttackController>(FindObjectsSortMode.None);
 
         foreach (AttackController controller in allAttackControllers)
         {

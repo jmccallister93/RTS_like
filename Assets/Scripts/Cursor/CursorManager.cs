@@ -27,7 +27,6 @@ public class CursorManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
             InitializeCursors();
         }
         else

@@ -9,7 +9,7 @@ public class UITalentButton
 {
     private Button _button;
     private ScriptableSkill _skill;
-    private bool _isUnlocked = false;
+    //private bool _isUnlocked = false;
 
     public static UnityAction<ScriptableSkill> OnSkillButtonClicked;
 

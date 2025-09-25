@@ -65,6 +65,7 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     public AbilityInputHandler inputHandler;
     public UnitAbilityTracker unitTracker;
     public AbilityExecutor executor;
+    public AbilityIndicator abilityIndicator;
 
     // Events
     public static event Action<GameObject, IAbility> OnAbilityUsed;
@@ -122,6 +123,7 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         if (inputHandler == null) inputHandler = GetComponent<AbilityInputHandler>();
         if (unitTracker == null) unitTracker = GetComponent<UnitAbilityTracker>();
         if (executor == null) executor = GetComponent<AbilityExecutor>();
+        if (abilityIndicator == null) abilityIndicator = GetComponent<AbilityIndicator>();
     }
 
     private void SetupComponents()
@@ -151,14 +153,44 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     public bool TryUseAbility(IAbility ability)
     {
         if (CurrentSelectedUnit == null || !ability.CanUse(CurrentSelectedUnit))
+        {
+            // Hide indicator if ability can't be used
+            abilityIndicator.HideIndicator();
             return false;
+        }
+
+        // Handle abilities that don't need targeting (Self target type)
+        if (ability.TargetType == TargetType.Self || ability.TargetType == TargetType.None)
+        {
+            abilityIndicator.HideIndicator();
+            return executor.TryExecuteAbility(ability);
+        }
 
         if (ability.TargetType != TargetType.None && ability.TargetType != TargetType.Self)
         {
             CursorManager.Instance.SetCursor("AbilityTargetingEnemy");
         }
+        // Show targeting indicator
+        abilityIndicator.ShowIndicator(ability, CurrentSelectedUnit.transform.position);
+        SetCursorForTargetType(ability.TargetType);
 
         return executor.TryExecuteAbility(ability);
+    }
+    private void SetCursorForTargetType(TargetType targetType)
+    {
+        if (CursorManager.Instance == null) return;
+
+        string cursorName = targetType switch
+        {
+            TargetType.Enemy => "AbilityTargetingEnemy",
+            TargetType.Ally => "AbilityTargetingAlly",
+            TargetType.Area => "AbilityTargetingArea",
+            TargetType.Path => "AbilityTargetingPath",
+            TargetType.Point => "AbilityTargetingPoint",
+            _ => "AbilityTargetingEnemy"
+        };
+
+        CursorManager.Instance.SetCursor(cursorName);
     }
 
     public void SetAbility(int slotIndex, IAbility ability)
@@ -176,12 +208,19 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     public void CancelTargeting()
     {
+        abilityIndicator.HideIndicator();
         targetingSystem.CancelTargeting();
+        CursorManager.Instance.SetCursor("Default");
     }
 
-    #endregion
-
-    #region Pause System
+    //public void CompletedTargeting()
+    //{
+    //    if(targetingSystem.CompleteTargeting())
+    //    {
+    //        abilityIndicator.HideIndicator();
+    //        CursorManager.Instance.SetCursor("Default");
+    //    }
+    //}
 
     public void OnPause()
     {

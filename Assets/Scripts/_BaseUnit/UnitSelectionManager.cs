@@ -19,6 +19,7 @@ public class UnitSelectionManager : MonoBehaviour
     public float selectionCircleRadius = 0.5f;
     public float selectionCircleWidth = 0.15f;
 
+ 
     // Dictionary to track selection circles for each unit
     private Dictionary<GameObject, LineRenderer> unitSelectionCircles = new Dictionary<GameObject, LineRenderer>();
 
@@ -340,4 +341,6 @@ public class UnitSelectionManager : MonoBehaviour
             SelectUnit(unit, true);
         }
     }
+
+
 }
