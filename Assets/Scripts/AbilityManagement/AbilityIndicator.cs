@@ -109,13 +109,13 @@ public class AbilityIndicator : MonoBehaviour
                 SetRendererColor(lineRenderer, indicatorColor);
                 break;
 
-            case TargetType.Enemy:
-            case TargetType.Ally:
-                // Could show a small circle for single target abilities
-                circleRenderer.enabled = true;
-                SetRendererColor(circleRenderer, indicatorColor);
-                currentRange = 1f; // Small indicator for single targets
-                break;
+            //case TargetType.Enemy:
+            //case TargetType.Ally:
+            //    // Could show a small circle for single target abilities
+            //    circleRenderer.enabled = true;
+            //    SetRendererColor(circleRenderer, indicatorColor);
+            //    currentRange = 1f; // Small indicator for single targets
+            //    break;
         }
     }
 

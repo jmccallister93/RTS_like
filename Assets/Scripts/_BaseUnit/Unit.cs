@@ -25,7 +25,7 @@ public class Unit : MonoBehaviour
 
     private bool isHoldingPosition = false;
 
-    private RayCastManager rayCastManager;
+   
 
     void Start()
     {
@@ -201,16 +201,14 @@ public class Unit : MonoBehaviour
         {
             attackController.ClearGuardPosition();
             attackController.targetToAttack = null;
-            
+
         }
     }
 
-    
+
     public void ClearHoldPosition()
     {
         if (isHoldingPosition) isHoldingPosition = false;
     }
-
-
 
 }

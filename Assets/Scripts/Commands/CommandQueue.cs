@@ -230,6 +230,66 @@ public class HoldCommand : ICommand
     }
 }
 
+public class AbilityMoveCommand : ICommand
+{
+    private readonly GameObject caster;
+    private readonly IAbility ability;
+    private readonly Transform targetTransform;
+    private readonly Vector3 targetPosition;
+
+    public AbilityMoveCommand(GameObject caster, IAbility ability, Transform targetTransform, Vector3 targetPosition)
+    {
+        this.caster = caster;
+        this.ability = ability;
+        this.targetTransform = targetTransform;
+        this.targetPosition = targetPosition;
+    }
+
+    public GameObject TargetUnit => caster;
+
+    public void Execute()
+    {
+        if (caster == null || ability == null) return;
+
+        Unit unit = caster.GetComponent<Unit>();
+        if (unit == null) return;
+
+        CommandQueue.Instance.StartCoroutine(ChaseAndCast(unit));
+    }
+
+    private System.Collections.IEnumerator ChaseAndCast(Unit unit)
+    {
+        while (true)
+        {
+            // If target died or disappeared: stop
+            if (targetTransform != null && (targetTransform.gameObject == null || !targetTransform.GetComponent<Unit>()?.IsAlive() == true))
+                yield break;
+
+            Vector3 chasePos = targetTransform != null ? targetTransform.position : targetPosition;
+            float dist = Vector3.Distance(unit.transform.position, chasePos);
+
+            if (dist <= ability.Range)
+            {
+                // In range: cast
+                var executor = AbilityManager.Instance.GetComponent<AbilityExecutor>();
+                if (executor != null)
+                {
+                    executor.ExecuteAbility(ability, chasePos, targetTransform?.gameObject);
+                }
+                yield break;
+            }
+
+            // Keep moving closer
+            unit.MoveTo(chasePos);
+
+            // Re-check every frame
+            yield return null;
+        }
+    }
+
+}
+
+
 public class AbilityCastCommand : ICommand
 {
     private readonly GameObject caster;

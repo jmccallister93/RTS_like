@@ -8,6 +8,8 @@ public class UnitAbilityTracker : MonoBehaviour
 {
     // Current state
     private GameObject currentSelectedUnit;
+    public Unit CurrentSelectedUnit => currentSelectedUnit != null ? currentSelectedUnit.GetComponent<Unit>() : null;
+
     private AbilitySlot[] currentAbilitySlots = new AbilitySlot[6];
 
     // Per-unit storage
@@ -15,7 +17,6 @@ public class UnitAbilityTracker : MonoBehaviour
 
     private AbilityManager abilityManager;
 
-    public GameObject CurrentSelectedUnit => currentSelectedUnit;
 
     public void Initialize(AbilityManager manager)
     {

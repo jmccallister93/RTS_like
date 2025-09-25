@@ -40,7 +40,7 @@ public class AbilityTargetingSystem : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        Vector3 mouseWorldPos = GetMouseWorldPosition();
+        Vector3 mouseWorldPos = RayCastManager.Instance.GetMouseWorldPosition(); 
         UpdateTargetingPreview(mouseWorldPos);
 
         if (mouse.leftButton.wasPressedThisFrame)
@@ -67,7 +67,7 @@ public class AbilityTargetingSystem : MonoBehaviour
     {
         if (isTargeting && currentlyTargeting != null && abilityManager.CurrentSelectedUnit != null)
         {
-            currentlyTargeting.Cancel(abilityManager.CurrentSelectedUnit);
+            currentlyTargeting.Cancel(abilityManager.CurrentSelectedUnit.gameObject);
         }
 
         isTargeting = false;
@@ -80,6 +80,8 @@ public class AbilityTargetingSystem : MonoBehaviour
         if (currentlyTargeting == null || abilityManager.CurrentSelectedUnit == null) return;
 
         GameObject targetObject = null;
+        Transform targetTransform = null;
+
         if (currentlyTargeting.TargetType == TargetType.Ally || currentlyTargeting.TargetType == TargetType.Enemy)
         {
             targetObject = GetTargetAtPosition(targetPosition);
@@ -88,34 +90,55 @@ public class AbilityTargetingSystem : MonoBehaviour
                 CancelTargeting();
                 return;
             }
-        }
-
-        // Range check
-        float distance = Vector3.Distance(abilityManager.CurrentSelectedUnit.transform.position, targetPosition);
-        if (distance > currentlyTargeting.Range)
-        {
-            CancelTargeting();
-            return;
+            targetTransform = targetObject.transform;
         }
 
         var caster = abilityManager.CurrentSelectedUnit;
-        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
+        float distance;
 
+        if (targetTransform != null) // chasing a unit
+        {
+            distance = Vector3.Distance(caster.transform.position, targetTransform.position);
+        }
+        else // area or point targeting
+        {
+            distance = Vector3.Distance(caster.transform.position, targetPosition);
+        }
+
+        if (distance > currentlyTargeting.Range)
+        {
+            var abilityMove = new AbilityMoveCommand(
+                caster.gameObject,
+                currentlyTargeting,
+                targetTransform,   // null if it’s area/point
+                targetPosition
+            );
+            CommandQueue.Instance.QueueCommand(abilityMove);
+
+            isTargeting = false;
+            currentlyTargeting = null;
+            DestroyPreviewObject();
+            return;
+        }
+
+        // In range cast immediately
+        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
         if (paused)
         {
             CommandQueue.Instance.QueueCommand(
-                new AbilityCastCommand(caster, currentlyTargeting, targetPosition, targetObject));
+                new AbilityCastCommand(caster.gameObject, currentlyTargeting, targetPosition, targetObject));
         }
         else
         {
-            abilityManager.GetComponent<AbilityExecutor>().ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
+            abilityManager.GetComponent<AbilityExecutor>()
+                .ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
         }
 
-        // Clean up
         isTargeting = false;
         currentlyTargeting = null;
         DestroyPreviewObject();
     }
+
 
     private bool IsValidTarget(GameObject target, TargetType targetType)
     {
@@ -213,25 +236,6 @@ public class AbilityTargetingSystem : MonoBehaviour
             Destroy(previewObject);
             previewObject = null;
         }
-    }
-
-    private Vector3 GetMouseWorldPosition()
-    {
-        Ray ray = mainCamera.ScreenPointToRay(mouse.position.ReadValue());
-
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
-        {
-            return hit.point;
-        }
-
-        // Fallback to ground plane
-        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-        if (groundPlane.Raycast(ray, out float distance))
-        {
-            return ray.GetPoint(distance);
-        }
-
-        return Vector3.zero;
     }
 
     private GameObject GetTargetAtPosition(Vector3 position)

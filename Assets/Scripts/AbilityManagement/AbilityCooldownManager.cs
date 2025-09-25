@@ -51,12 +51,12 @@ public class AbilityCooldownManager : MonoBehaviour
             }
 
             // Update ability state based on conditions
-            if (cooldownInfo.state == AbilityState.Ready && !ability.CanUse(abilityManager.CurrentSelectedUnit))
+            if (cooldownInfo.state == AbilityState.Ready && !ability.CanUse(abilityManager.CurrentSelectedUnit.gameObject))
             {
                 cooldownInfo.state = AbilityState.Disabled;
                 SetCooldownInfo(i, cooldownInfo);
             }
-            else if (cooldownInfo.state == AbilityState.Disabled && ability.CanUse(abilityManager.CurrentSelectedUnit))
+            else if (cooldownInfo.state == AbilityState.Disabled && ability.CanUse(abilityManager.CurrentSelectedUnit.gameObject))
             {
                 cooldownInfo.state = AbilityState.Ready;
                 SetCooldownInfo(i, cooldownInfo);
@@ -75,7 +75,7 @@ public class AbilityCooldownManager : MonoBehaviour
         SetCooldownInfo(slotIndex, cooldownInfo);
 
         // Track cooldown for this unit
-        var currentUnit = abilityManager.CurrentSelectedUnit;
+        var currentUnit = abilityManager.CurrentSelectedUnit.gameObject;
         if (currentUnit != null)
         {
             if (!unitCooldowns.ContainsKey(currentUnit))

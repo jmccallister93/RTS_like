@@ -44,7 +44,7 @@ public class AbilityExecutor : MonoBehaviour
     public bool TryExecuteAbility(IAbility ability)
     {
         if (ability == null || abilityManager.CurrentSelectedUnit == null) return false;
-        if (!ability.CanUse(abilityManager.CurrentSelectedUnit)) return false;
+        if (!ability.CanUse(abilityManager.CurrentSelectedUnit.gameObject)) return false;
 
         targetingSystem.CancelTargeting();
 
@@ -56,12 +56,12 @@ public class AbilityExecutor : MonoBehaviour
                 if (paused)
                 {
                     CommandQueue.Instance.QueueCommand(
-                        new AbilityCastCommand(abilityManager.CurrentSelectedUnit, ability,
-                            abilityManager.CurrentSelectedUnit.transform.position, abilityManager.CurrentSelectedUnit));
+                        new AbilityCastCommand(abilityManager.CurrentSelectedUnit.gameObject, ability,
+                            abilityManager.CurrentSelectedUnit.transform.position, abilityManager.CurrentSelectedUnit.gameObject));
                 }
                 else
                 {
-                    ExecuteAbility(ability, abilityManager.CurrentSelectedUnit.transform.position, abilityManager.CurrentSelectedUnit);
+                    ExecuteAbility(ability, abilityManager.CurrentSelectedUnit.transform.position, abilityManager.CurrentSelectedUnit.gameObject);
                 }
                 return true;
 
@@ -99,7 +99,7 @@ public class AbilityExecutor : MonoBehaviour
 
     public void ExecuteAbility(IAbility ability, Vector3 targetPosition, GameObject target = null)
     {
-        var caster = abilityManager.CurrentSelectedUnit;
+        var caster = abilityManager.CurrentSelectedUnit.gameObject;
 
         if (caster == null)
         {
@@ -195,7 +195,7 @@ public class AbilityExecutor : MonoBehaviour
                     var ability = unitTracker.GetAbility(i);
                     if (ability != null && abilityManager.CurrentSelectedUnit != null)
                     {
-                        ability.Cancel(abilityManager.CurrentSelectedUnit);
+                        ability.Cancel(abilityManager.CurrentSelectedUnit.gameObject);
                     }
                 }
             }
@@ -213,7 +213,7 @@ public class AbilityExecutor : MonoBehaviour
             {
                 wasCastingWhenPaused = true;
                 pausedCastingAbility = unitTracker.GetAbility(i);
-                pausedCaster = abilityManager.CurrentSelectedUnit;
+                pausedCaster = abilityManager.CurrentSelectedUnit.gameObject;
                 break;
             }
         }

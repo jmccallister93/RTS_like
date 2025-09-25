@@ -106,7 +106,7 @@ public class UnitMovingState : StateMachineBehaviour
             // Clear the moving flag to return to Idle
             animator.SetBool("isMoving", false);
 
-            Debug.Log($"{animator.name} finished moving, returning to Idle - currentMode preserved: {unitMovement.currentMode}");
+            //Debug.Log($"{animator.name} finished moving, returning to Idle - currentMode preserved: {unitMovement.currentMode}");
             return;
         }
 

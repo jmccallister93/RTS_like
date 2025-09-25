@@ -78,7 +78,8 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
     // Properties
     public bool IsTargeting => targetingSystem.IsTargeting;
     public bool IsCasting => executor.IsCasting;
-    public GameObject CurrentSelectedUnit => unitTracker.CurrentSelectedUnit;
+    public Unit CurrentSelectedUnit => unitTracker.CurrentSelectedUnit;
+
 
     private void Awake()
     {
@@ -141,7 +142,7 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         executor.OnAbilityCooldownStarted += (caster, ability) => OnAbilityCooldownStarted?.Invoke(caster, ability);
     }
 
-    #region Public API
+ 
 
     public bool TryUseAbility(int slotIndex)
     {
@@ -152,7 +153,7 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     public bool TryUseAbility(IAbility ability)
     {
-        if (CurrentSelectedUnit == null || !ability.CanUse(CurrentSelectedUnit))
+        if (CurrentSelectedUnit == null || !ability.CanUse(CurrentSelectedUnit.gameObject))
         {
             // Hide indicator if ability can't be used
             abilityIndicator.HideIndicator();
@@ -234,5 +235,5 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
         targetingSystem.OnResume();
     }
 
-    #endregion
+
 }

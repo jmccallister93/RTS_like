@@ -12,7 +12,7 @@ public class UnitHoverManager : MonoBehaviour
     public int circleSegments = 32;
 
     [Header("Raycast Settings")]
-    public LayerMask unitLayerMask = 1;
+    public LayerMask unitLayerMask;
     public float raycastDistance = 100f;
 
     // Current hover state
@@ -32,7 +32,7 @@ public class UnitHoverManager : MonoBehaviour
             return;
         }
         Instance = this;
-
+        unitLayerMask = LayerMask.GetMask("Clickable");
         mainCamera = Camera.main;
         mouse = Mouse.current;
     }
@@ -52,12 +52,12 @@ public class UnitHoverManager : MonoBehaviour
         }
 
         // Skip hover detection if ability manager is targeting
-        if (AbilityManager.Instance != null &&
-            (AbilityManager.Instance.IsTargeting || AbilityManager.Instance.IsCasting))
-        {
-            ClearCurrentHover();
-            return;
-        }
+        //if (AbilityManager.Instance != null &&
+        //    (AbilityManager.Instance.IsTargeting || AbilityManager.Instance.IsCasting))
+        //{
+        //    ClearCurrentHover();
+        //    return;
+        //}
 
         // Get mouse world position and raycast
         Vector3 mouseWorldPos = RayCastManager.Instance.GetMouseWorldPosition();
@@ -81,10 +81,9 @@ public class UnitHoverManager : MonoBehaviour
         if (mouse == null || mainCamera == null) return null;
 
         Ray ray = mainCamera.ScreenPointToRay(mouse.position.ReadValue());
-
+        
         if (Physics.Raycast(ray, out RaycastHit hit, raycastDistance, unitLayerMask))
         {
-            Debug.Log("Hit " + hit.collider.gameObject.name);
             GameObject hitObject = hit.collider.gameObject;
 
             // Check if it has a Unit component
@@ -118,7 +117,8 @@ public class UnitHoverManager : MonoBehaviour
         circleObj.transform.localPosition = Vector3.zero;
 
         LineRenderer circleRenderer = circleObj.AddComponent<LineRenderer>();
-        circleRenderer.material = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+        circleRenderer.material = new Material(Shader.Find("Sprites/Default"));
+
 
         circleRenderer.startColor = circleColor;
         circleRenderer.endColor = circleColor;
