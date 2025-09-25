@@ -95,14 +95,17 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
             RaycastHit hit;
 
             // Enemy targeting
-            if (Physics.Raycast(ray, out hit, 100f, UnitSelectionManager.Instance.attackable))
+            if (Physics.Raycast(ray, out hit, 100f, UnitSelectionManager.Instance.clickable))
             {
+
                 GameObject clickedObject = hit.collider.gameObject;
                 if (IsValidEnemyTarget(clickedObject, selectedUnits))
                 {
+                 
                     CursorManager.Instance.SetCursor("Attack");
                     foreach (GameObject unit in selectedUnits)
                     {
+                        
                         var attackCommand = new AttackTargetCommand(unit, hit.transform);
                         ExecuteOrQueueCommand(attackCommand);
                     }
@@ -111,7 +114,9 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
                     SelectCommand(CommandType.Move);
                     return;
                 }
+                
             }
+            
 
             // If an ability is awaiting target
             if (isAwaitingTarget && pendingAbility != null && pendingCaster != null)
@@ -131,6 +136,7 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
             }
 
             // Normal movement/command
+           
             Vector3 destination = GetMouseWorldPosition();
             ExecuteCommand(destination, selectedUnits);
             guardAreaDisplay.HideGuardAreaPreview();

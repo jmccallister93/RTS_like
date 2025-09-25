@@ -21,7 +21,7 @@ public class UnitMovement : MonoBehaviour, IPausable
     public bool enableInstantTurning = true;
     public float minVelocityForTurning = 0.1f; // Minimum velocity to trigger turning
 
-    private NavMeshAgent agent;
+    public NavMeshAgent agent;
     public bool isCommandedtoMove;
     public MovementMode currentMode = MovementMode.None;
 

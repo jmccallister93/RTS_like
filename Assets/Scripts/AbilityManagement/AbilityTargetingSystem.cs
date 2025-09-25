@@ -43,11 +43,11 @@ public class AbilityTargetingSystem : MonoBehaviour
         Vector3 mouseWorldPos = RayCastManager.Instance.GetMouseWorldPosition(); 
         UpdateTargetingPreview(mouseWorldPos);
 
-        if (mouse.leftButton.wasPressedThisFrame)
+        if (mouse.rightButton.wasPressedThisFrame)
         {
             CompleteTargeting(mouseWorldPos);
         }
-        else if (mouse.rightButton.wasPressedThisFrame)
+        else if (mouse.leftButton.wasPressedThisFrame)
         {
             CancelTargeting();
         }

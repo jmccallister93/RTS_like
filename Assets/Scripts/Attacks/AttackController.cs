@@ -23,6 +23,8 @@ public class AttackController : MonoBehaviour, IPausable
     private Unit unitComponent;
     private CharacterManager characterManager; // NEW: For damage values
 
+
+
     private void Awake()
     {
         movement = GetComponent<UnitMovement>();
@@ -199,15 +201,35 @@ public class AttackController : MonoBehaviour, IPausable
 
         if (newTarget != null && ShouldAutoTarget(newTarget.gameObject))
         {
+            // Stop all movement and clear any existing states
+            if (movement != null)
+            {
+                movement.StopMovement(); // This clears isCommandedtoMove
+            }
+
+            // Set the target
             targetToAttack = newTarget;
 
             if (unitComponent == null || !unitComponent.IsHoldingPosition())
             {
-                movement.StopMovement();
-
                 var animator = GetComponent<Animator>();
-                if (animator) animator.SetBool("isFollowing", true);
+                if (animator != null)
+                {
+                    // Clear all movement-related animator states first
+                    animator.SetBool("isMoving", false);
+                    animator.SetBool("isAttacking", false);
+
+                    // Then set follow state
+                    animator.SetBool("isFollowing", true);
+
+                    if (showDebugLogs)
+                        Debug.Log($"{name} setting target to {newTarget.name}, transitioning to Follow state");
+                }
             }
+        }
+        else if (showDebugLogs && newTarget != null)
+        {
+            Debug.Log($"{name} cannot target {newTarget.name} - invalid target or hold position preventing");
         }
     }
 
@@ -235,6 +257,9 @@ public class AttackController : MonoBehaviour, IPausable
             }
         }
     }
+
+    
+
 
     public void DealDamage(Transform target)
     {

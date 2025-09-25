@@ -172,11 +172,21 @@ public class AttackTargetCommand : ICommand
         this.unit = unit;
         this.target = target;
     }
+
     public GameObject TargetUnit => unit;
+
     public void Execute()
     {
         if (unit != null && target != null)
         {
+            // First, stop any existing movement to prevent conflicts
+            Unit unitComponent = unit.GetComponent<Unit>();
+            if (unitComponent != null)
+            {
+                unitComponent.StopMovement(); // This clears movement flags
+            }
+
+            // Then set the attack target
             AttackController attackController = unit.GetComponent<AttackController>();
             if (attackController != null)
             {
@@ -278,6 +288,7 @@ public class AbilityMoveCommand : ICommand
                 {
                     executor.ExecuteAbility(ability, chasePos, targetTransform?.gameObject);
                 }
+                unit.StopMovement();
                 yield break;
             }
 

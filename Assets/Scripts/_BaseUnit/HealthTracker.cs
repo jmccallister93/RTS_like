@@ -43,9 +43,6 @@ public class HealthTracker : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call this method to update the health bar value and color
-    /// </summary>
     public void UpdateSliderValue(float currentHealth, float maxHealth)
     {
         if (HealthBarSlider == null) return;
@@ -66,9 +63,7 @@ public class HealthTracker : MonoBehaviour
         UpdateColor(healthPercentage);
     }
 
-    /// <summary>
-    /// Immediately set health without animation
-    /// </summary>
+
     public void SetHealthImmediate(float currentHealth, float maxHealth)
     {
         if (HealthBarSlider == null) return;
@@ -78,9 +73,7 @@ public class HealthTracker : MonoBehaviour
         UpdateColor(healthPercentage);
     }
 
-    /// <summary>
-    /// Smoothly animate health bar changes
-    /// </summary>
+
     private IEnumerator SmoothHealthChange(float startValue, float targetValue, float duration)
     {
         float elapsedTime = 0f;
@@ -100,10 +93,6 @@ public class HealthTracker : MonoBehaviour
         HealthBarSlider.value = targetValue;
         smoothHealthChangeCoroutine = null;
     }
-
-    /// <summary>
-    /// Update the health bar color based on health percentage
-    /// </summary>
     private void UpdateColor(float healthPercentage)
     {
         if (sliderFill == null) return;
@@ -135,22 +124,17 @@ public class HealthTracker : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Smoothly transition between colors
-    /// </summary>
     private void StartColorTransition(Color targetColor)
     {
+        if (!isActiveAndEnabled) return;
+
         if (colorTransitionCoroutine != null)
-        {
             StopCoroutine(colorTransitionCoroutine);
-        }
 
         colorTransitionCoroutine = StartCoroutine(SmoothColorTransition(sliderFill.color, targetColor, 0.2f));
     }
 
-    /// <summary>
-    /// Coroutine for smooth color transitions
-    /// </summary>
+
     private IEnumerator SmoothColorTransition(Color startColor, Color targetColor, float duration)
     {
         float elapsedTime = 0f;
@@ -168,17 +152,11 @@ public class HealthTracker : MonoBehaviour
         colorTransitionCoroutine = null;
     }
 
-    /// <summary>
-    /// Get current health percentage (0-1)
-    /// </summary>
     public float GetHealthPercentage()
     {
         return HealthBarSlider != null ? HealthBarSlider.value : 0f;
     }
 
-    /// <summary>
-    /// Manually set colors in inspector or code
-    /// </summary>
     public void SetHealthColors(Color healthy, Color warned, Color critical)
     {
         healthyColor = healthy;
@@ -186,9 +164,6 @@ public class HealthTracker : MonoBehaviour
         criticalColor = critical;
     }
 
-    /// <summary>
-    /// For debugging - test different health values
-    /// </summary>
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public void TestHealthValue(float percentage)
     {
