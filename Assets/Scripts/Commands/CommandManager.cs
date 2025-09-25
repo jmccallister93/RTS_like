@@ -298,7 +298,7 @@ public class CommandManager : MonoBehaviour, IRunWhenPaused
         }
     }
 
-    void ExecuteOrQueueCommand(ICommand command)
+   public void ExecuteOrQueueCommand(ICommand command)
     {
         if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
             CommandQueue.Instance.QueueCommand(command);

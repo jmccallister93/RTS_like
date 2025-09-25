@@ -249,6 +249,7 @@ public class AbilityMoveCommand : ICommand
 
     public void Execute()
     {
+        Debug.Log($"Executing AbilityMoveCommand for {caster.name}");
         if (caster == null || ability == null) return;
 
         Unit unit = caster.GetComponent<Unit>();
@@ -256,6 +257,7 @@ public class AbilityMoveCommand : ICommand
 
         CommandQueue.Instance.StartCoroutine(ChaseAndCast(unit));
     }
+
 
     private System.Collections.IEnumerator ChaseAndCast(Unit unit)
     {

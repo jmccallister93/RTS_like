@@ -110,16 +110,22 @@ public class AbilityTargetingSystem : MonoBehaviour
             var abilityMove = new AbilityMoveCommand(
                 caster.gameObject,
                 currentlyTargeting,
-                targetTransform,   // null if it’s area/point
+                targetTransform,
                 targetPosition
             );
-            CommandQueue.Instance.QueueCommand(abilityMove);
+
+            // Execute now if not paused; otherwise queue.
+            if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+                CommandQueue.Instance.QueueCommand(abilityMove);
+            else
+                abilityMove.Execute();
 
             isTargeting = false;
             currentlyTargeting = null;
             DestroyPreviewObject();
             return;
         }
+
 
         // In range cast immediately
         bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
