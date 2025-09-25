@@ -481,7 +481,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
   healthBar: {fileID: 6341198594044653373}
-  corpseLifetime: 10
   floatingDamageTextPrefab: {fileID: 7596531605966106363, guid: 0b186609f2a59744f92b4b7cd842cc97, type: 3}
   floatingTextSpawnPoint: {fileID: 2876048279399836699}
 --- !u!114 &4490762081966064489
@@ -502,6 +501,7 @@ MonoBehaviour:
   raycastDistance: 100
   enableInstantTurning: 1
   minVelocityForTurning: 0.1
+  agent: {fileID: 0}
   isCommandedtoMove: 0
   currentMode: 0
   patrolInterruptedByCombat: 0
@@ -557,7 +557,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelManager
   currentLevel: 1
   currentExperience: 0
-  classDefinition: {fileID: 0}
+  classDefinition: {fileID: 11400000, guid: 33612a2fe80004e4fb7aae25d9dabf0a, type: 2}
 --- !u!114 &6922075099483026051
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -629,13 +629,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UnitAbilities
   abilities:
   - {fileID: 11400000, guid: 49a16e81b4b228c46ba93013f406a194, type: 2}
+  - {fileID: 11400000, guid: 4fbe6050de8a58e44800f8a3034255cc, type: 2}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  - {fileID: 0}
-  availableAbilities:
-  - {fileID: 11400000, guid: 49a16e81b4b228c46ba93013f406a194, type: 2}
+  availableAbilities: []
 --- !u!1 &4523606610297031665
 GameObject:
   m_ObjectHideFlags: 0

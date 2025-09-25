@@ -94,12 +94,6 @@ public class Unit : MonoBehaviour
         // Apply damage through CharacterManager
         characterManager.TakeDamage(damageAmount);
 
-        // Display floating damage text
-        DisplayFloatingDamageText(damageAmount);
-    }
-
-    public void DisplayFloatingDamageText(float damageAmount)
-    {
         // Spawn floating damage text
         if (floatingDamageTextPrefab != null)
         {
@@ -117,12 +111,15 @@ public class Unit : MonoBehaviour
             }
         }
     }
-
-    // Add this method to your Unit class for healing text (optional)
-    public void DisplayFloatingHealingText(float healingAmount)
+    public void Heal(float healingAmount)
     {
-        // Spawn floating healing text (you could use a different prefab or modify the text color)
-        if (floatingDamageTextPrefab != null) // Could be renamed to floatingTextPrefab
+        if (characterManager == null || !IsAlive()) return;
+
+        // Apply healing through CharacterManager
+        characterManager.Heal(healingAmount);
+
+        // Spawn floating healing text (optional - you can skip this if you don't want healing numbers)
+        if (floatingDamageTextPrefab != null)
         {
             Vector3 spawnPos = floatingTextSpawnPoint != null
                 ? floatingTextSpawnPoint.position
@@ -134,12 +131,30 @@ public class Unit : MonoBehaviour
             var fdt = textObj.GetComponent<FloatingDamageText>();
             if (fdt != null)
             {
-                // You might want to modify FloatingDamageText to handle healing differently
-                // For now, we'll just pass a negative value or create a separate initialization method
+                // Use a different method for healing text (green color, + sign)
                 fdt.InitializeHealing(healingAmount);
             }
         }
     }
+    //public void DisplayFloatingDamageText(float damageAmount)
+    //{
+    //    // Spawn floating damage text
+    //    if (floatingDamageTextPrefab != null)
+    //    {
+    //        Vector3 spawnPos = floatingTextSpawnPoint != null
+    //            ? floatingTextSpawnPoint.position
+    //            : transform.position + Vector3.up * 2f;
+
+    //        spawnPos += new Vector3(Random.Range(-0.2f, 0.2f), 0f, Random.Range(-0.2f, 0.2f));
+
+    //        GameObject textObj = Instantiate(floatingDamageTextPrefab, spawnPos, Quaternion.identity);
+    //        var fdt = textObj.GetComponent<FloatingDamageText>();
+    //        if (fdt != null)
+    //        {
+    //            fdt.Initialize(damageAmount);
+    //        }
+    //    }
+    //}
 
 
     private void HandleDeath()

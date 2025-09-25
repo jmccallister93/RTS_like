@@ -86,19 +86,11 @@ public abstract class DamageEffectAbility : IDamageEffect
 
     public virtual void ApplyDamage(GameObject caster, GameObject target, float damage)
     {
-        var characterManager = target.GetComponent<CharacterManager>();
-        if (characterManager != null)
+        // Use the same path as auto attacks - go through Unit.TakeDamage()
+        var targetUnit = target.GetComponent<Unit>();
+        if (targetUnit != null && targetUnit.IsAlive())
         {
-            characterManager.TakeDamage(damage);
-
-            // Also trigger floating damage text if the target has a Unit component
-            var targetUnit = target.GetComponent<Unit>();
-            if (targetUnit != null)
-            {
-                // Call a method to display floating text without doing damage again
-                targetUnit.DisplayFloatingDamageText(damage);
-            }
-
+            targetUnit.TakeDamage(damage);
             Debug.Log($"{caster.name} dealt {damage} damage to {target.name}");
         }
     }
@@ -134,19 +126,11 @@ public abstract class HealEffectAbility : IHealEffect
 
     public virtual void ApplyHealing(GameObject caster, GameObject target, float healing)
     {
-        var characterManager = target.GetComponent<CharacterManager>();
-        if (characterManager != null)
+        // Use the same pattern as damage - go through Unit.Heal()
+        var targetUnit = target.GetComponent<Unit>();
+        if (targetUnit != null && targetUnit.IsAlive())
         {
-            characterManager.Heal(healing);
-
-            // Also trigger floating healing text if the target has a Unit component
-            var targetUnit = target.GetComponent<Unit>();
-            if (targetUnit != null)
-            {
-                // Call a method to display floating text for healing
-                targetUnit.DisplayFloatingHealingText(healing);
-            }
-
+            targetUnit.Heal(healing);
             Debug.Log($"{caster.name} healed {target.name} for {healing}");
         }
     }

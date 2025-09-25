@@ -47,10 +47,10 @@ public class HeavyStrikeSO : SingleTargetEnemyAbility, IDamageEffect, IDebuffEff
 
     public void ApplyDamage(GameObject caster, GameObject target, float damage)
     {
-        var characterManager = target.GetComponent<CharacterManager>();
-        if (characterManager != null)
+        var unit = target.GetComponent<Unit>();
+        if (unit != null)
         {
-            characterManager.TakeDamage(damage);
+            unit.TakeDamage(damage);
             Debug.Log($"Heavy Strike: {caster.name} dealt {damage} damage to {target.name}");
         }
     }
