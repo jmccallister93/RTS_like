@@ -43,11 +43,11 @@ public class AbilityTargetingSystem : MonoBehaviour
         Vector3 mouseWorldPos = RayCastManager.Instance.GetMouseWorldPosition(); 
         UpdateTargetingPreview(mouseWorldPos);
 
-        if (mouse.rightButton.wasPressedThisFrame)
+        if (mouse.leftButton.wasPressedThisFrame)
         {
             CompleteTargeting(mouseWorldPos);
         }
-        else if (mouse.leftButton.wasPressedThisFrame)
+        else if (mouse.rightButton.wasPressedThisFrame)
         {
             CancelTargeting();
         }
@@ -106,25 +106,25 @@ public class AbilityTargetingSystem : MonoBehaviour
         }
 
         if (distance > currentlyTargeting.Range)
-        {
-            var abilityMove = new AbilityMoveCommand(
-                caster.gameObject,
-                currentlyTargeting,
-                targetTransform,
-                targetPosition
-            );
+{
+    var abilityMove = new AbilityMoveCommand(
+        caster.gameObject,
+        currentlyTargeting,
+        targetTransform,
+        targetPosition
+    );
 
-            // Execute now if not paused; otherwise queue.
-            if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-                CommandQueue.Instance.QueueCommand(abilityMove);
-            else
-                abilityMove.Execute();
+    // Execute now if not paused; otherwise queue.
+    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+        CommandQueue.Instance.QueueCommand(abilityMove);
+    else
+        abilityMove.Execute();
 
-            isTargeting = false;
-            currentlyTargeting = null;
-            DestroyPreviewObject();
-            return;
-        }
+    isTargeting = false;
+    currentlyTargeting = null;
+    DestroyPreviewObject();
+    return;
+}
 
 
         // In range cast immediately

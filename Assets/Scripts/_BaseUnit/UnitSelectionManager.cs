@@ -57,10 +57,20 @@ public class UnitSelectionManager : MonoBehaviour
         CleanupNullUnits();
 
         // SKIP SELECTION IF ABILITY MANAGER IS TARGETING
-        if (AbilityManager.Instance != null &&
-       (AbilityManager.Instance.IsTargeting || AbilityManager.Instance.IsCasting))
+        // ENHANCED: More comprehensive check for ability system state
+        bool abilitySystemActive = AbilityManager.Instance != null &&
+            (AbilityManager.Instance.IsTargeting ||
+             AbilityManager.Instance.IsCasting ||
+             AbilityManager.Instance.GetComponent<AbilityTargetingSystem>()?.IsTargeting == true);
+
+        if (abilitySystemActive)
         {
-            // You can still show the attack cursor if you want
+            // Debug to verify this is working
+            if (mouse.leftButton.wasPressedThisFrame)
+            {
+                Debug.Log("Left-click blocked: Ability system is active");
+            }
+
             HandleAttackCursor();
             return;
         }

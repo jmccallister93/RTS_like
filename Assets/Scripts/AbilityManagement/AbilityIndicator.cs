@@ -28,6 +28,7 @@ public class AbilityIndicator : MonoBehaviour
 
     // Ability parameters
     private float currentRange = 5f;
+    private float currentAreaRadius = 3f;  // For area effect radius
     private float currentWidth = 2f;  // For rectangle width or line thickness area
     private Vector3 startPosition;
 
@@ -80,6 +81,17 @@ public class AbilityIndicator : MonoBehaviour
         currentAbility = ability;
         currentTargetType = ability.TargetType;
         currentRange = ability.Range;
+
+        // Use area radius if the ability specifies it should be used for the indicator
+        if (ability.UseAreaRadiusForIndicator)
+        {
+            currentAreaRadius = ability.AreaRadius;
+        }
+        else
+        {
+            currentAreaRadius = currentRange;
+        }
+
         startPosition = casterPosition;
         isActive = true;
 
@@ -109,13 +121,13 @@ public class AbilityIndicator : MonoBehaviour
                 SetRendererColor(lineRenderer, indicatorColor);
                 break;
 
-            //case TargetType.Enemy:
-            //case TargetType.Ally:
-            //    // Could show a small circle for single target abilities
-            //    circleRenderer.enabled = true;
-            //    SetRendererColor(circleRenderer, indicatorColor);
-            //    currentRange = 1f; // Small indicator for single targets
-            //    break;
+                //case TargetType.Enemy:
+                //case TargetType.Ally:
+                //    // Could show a small circle for single target abilities
+                //    circleRenderer.enabled = true;
+                //    SetRendererColor(circleRenderer, indicatorColor);
+                //    currentRange = 1f; // Small indicator for single targets
+                //    break;
         }
     }
 
@@ -157,12 +169,17 @@ public class AbilityIndicator : MonoBehaviour
     {
         if (!isActive || currentAbility == null) return;
 
-        Vector3 mouseWorldPos = GetMouseWorldPosition();
+        Vector3 mouseWorldPos = RayCastManager.Instance.GetMouseWorldPosition();
         if (mouseWorldPos == Vector3.zero) return;
 
         switch (currentTargetType)
         {
             case TargetType.Area:
+                // For area abilities, show indicator at caster position if range is 0, otherwise at mouse position
+                Vector3 centerPos = currentRange == 0f ? startPosition : mouseWorldPos;
+                UpdateCircleIndicator(centerPos);
+                break;
+
             case TargetType.Enemy:
             case TargetType.Ally:
                 UpdateCircleIndicator(mouseWorldPos);
@@ -182,11 +199,16 @@ public class AbilityIndicator : MonoBehaviour
     {
         Vector3[] positions = new Vector3[circleSegments + 1];
 
+        // Use area radius for area effects, regular range for others
+        float radiusToUse = (currentTargetType == TargetType.Area && currentAbility.UseAreaRadiusForIndicator)
+            ? currentAreaRadius
+            : currentRange;
+
         for (int i = 0; i <= circleSegments; i++)
         {
             float angle = i * Mathf.PI * 2f / circleSegments;
-            float x = Mathf.Cos(angle) * currentRange;
-            float z = Mathf.Sin(angle) * currentRange;
+            float x = Mathf.Cos(angle) * radiusToUse;
+            float z = Mathf.Sin(angle) * radiusToUse;
             positions[i] = center + new Vector3(x, 0.1f, z); // Slightly above ground
         }
 
@@ -218,24 +240,24 @@ public class AbilityIndicator : MonoBehaviour
         lineRenderer.SetPositions(positions);
     }
 
-    Vector3 GetMouseWorldPosition()
-    {
-        Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-        RaycastHit hit;
+    //Vector3 GetMouseWorldPosition()
+    //{
+    //    Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+    //    RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit))
-        {
-            return hit.point;
-        }
+    //    if (Physics.Raycast(ray, out hit))
+    //    {
+    //        return hit.point;
+    //    }
 
-        // Fallback: project onto a ground plane at y=0
-        Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-        float distance;
-        if (groundPlane.Raycast(ray, out distance))
-        {
-            return ray.GetPoint(distance);
-        }
+    //    // Fallback: project onto a ground plane at y=0
+    //    Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
+    //    float distance;
+    //    if (groundPlane.Raycast(ray, out distance))
+    //    {
+    //        return ray.GetPoint(distance);
+    //    }
 
-        return Vector3.zero;
-    }
+    //    return Vector3.zero;
+    //}
 }

@@ -49,6 +49,10 @@ public interface IAbility
     AbilityState State { get; }
     Color PreviewColor { get; }
 
+    // New properties for area effects
+    float AreaRadius { get; }
+    bool UseAreaRadiusForIndicator { get; }
+
     bool CanUse(GameObject caster);
     void StartCast(GameObject caster, Vector3 targetPosition, GameObject target = null);
     void Execute(GameObject caster, Vector3 targetPosition, GameObject target = null);
@@ -167,15 +171,45 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
             return executor.TryExecuteAbility(ability);
         }
 
+        // Handle area abilities with range 0 (cast at caster position immediately)
+        if (ability.TargetType == TargetType.Area && ability.Range == 0f)
+        {
+            // Show indicator for a brief moment to show the area, then execute
+            abilityIndicator.ShowIndicator(ability, CurrentSelectedUnit.transform.position);
+            // Execute immediately at caster position
+            bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
+            if (paused)
+            {
+                CommandQueue.Instance.QueueCommand(
+                    new AbilityCastCommand(CurrentSelectedUnit.gameObject, ability, CurrentSelectedUnit.transform.position, null));
+            }
+            else
+            {
+                executor.GetComponent<AbilityExecutor>().ExecuteAbility(ability, CurrentSelectedUnit.transform.position, null);
+            }
+
+            // Hide indicator after a short delay
+            StartCoroutine(HideIndicatorAfterDelay(0.5f));
+            return true;
+        }
+
+        // Handle abilities that need targeting
         if (ability.TargetType != TargetType.None && ability.TargetType != TargetType.Self)
         {
-            CursorManager.Instance.SetCursor("AbilityTargetingEnemy");
+            SetCursorForTargetType(ability.TargetType);
         }
+
         // Show targeting indicator
         abilityIndicator.ShowIndicator(ability, CurrentSelectedUnit.transform.position);
-        SetCursorForTargetType(ability.TargetType);
 
         return executor.TryExecuteAbility(ability);
+    }
+
+    private System.Collections.IEnumerator HideIndicatorAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        abilityIndicator.HideIndicator();
+        CursorManager.Instance.SetCursor("Default");
     }
     private void SetCursorForTargetType(TargetType targetType)
     {

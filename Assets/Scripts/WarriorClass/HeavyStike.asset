@@ -12,15 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fd4eb9540f5c8b4b8ac98baa558f5ac, type: 3}
   m_Name: HeavyStike
   m_EditorClassIdentifier: Assembly-CSharp::HeavyStrikeSO
-  abilityName: New Ability
+  abilityName: Heavy Strike
   description: 
   icon: {fileID: 21300000, guid: c712cbb4c50e47b48954c9dbe31ae839, type: 3}
   cooldown: 1
   castTime: 0.5
-  range: 10
+  range: 2
   targetType: 2
   previewColor: {r: 0.9622642, g: 0.4339267, b: 0.4339267, a: 1}
-  lastCastTime: 13.016507
-  damageMultiplier: 2
+  areaRadius: 0
+  useAreaRadiusForIndicator: 0
+  lastCastTime: 6.8231654
+  damageMultiplier: 4
   rageCost: 0
-  stunDuration: 1
+  stunDuration: 0
