@@ -54,29 +54,25 @@ public class UnitSelectionManager : MonoBehaviour
 
     private void Update()
     {
+       
         CleanupNullUnits();
 
-        // SKIP SELECTION IF ABILITY MANAGER IS TARGETING
-        // ENHANCED: More comprehensive check for ability system state
-        bool abilitySystemActive = AbilityManager.Instance != null &&
-            (AbilityManager.Instance.IsTargeting ||
-             AbilityManager.Instance.IsCasting ||
-             AbilityManager.Instance.GetComponent<AbilityTargetingSystem>()?.IsTargeting == true);
-
-        if (abilitySystemActive)
+        //  Block selection if ability system is active
+        if (InputBlocker.ClickConsumedThisFrame)
         {
-            // Debug to verify this is working
             if (mouse.leftButton.wasPressedThisFrame)
             {
-                Debug.Log("Left-click blocked: Ability system is active");
+                Debug.Log("[UnitSelectionManager] Click consumed by ability system, skipping selection");
             }
-
-            HandleAttackCursor();
+            HandleAttackCursor(); // still allow right-click attack cursor logic
             return;
         }
 
+
+        // Normal selection flow
         if (mouse.leftButton.wasPressedThisFrame)
         {
+            Debug.Log("[UnitSelectionManager] PROCESSED left-click for selection");
             if (EventSystem.current.IsPointerOverGameObject()) return;
 
             Vector2 mousePosition = mouse.position.ReadValue();
@@ -109,6 +105,7 @@ public class UnitSelectionManager : MonoBehaviour
         // Handle attack cursor and right-click attacks
         HandleAttackCursor();
     }
+
 
     // Extract attack cursor logic into separate method
     private void HandleAttackCursor()

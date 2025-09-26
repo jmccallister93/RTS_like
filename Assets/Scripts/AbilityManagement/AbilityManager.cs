@@ -104,8 +104,9 @@ public class AbilityManager : MonoBehaviour, IPausable, IRunWhenPaused
 
     private void Update()
     {
+        InputBlocker.ClickConsumedThisFrame = false;
         bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
-
+        
         // Update components (some run while paused, some don't)
         unitTracker.UpdateSelectedUnit();
         inputHandler.HandleInput();

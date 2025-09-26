@@ -46,10 +46,12 @@ public class AbilityTargetingSystem : MonoBehaviour
         if (mouse.leftButton.wasPressedThisFrame)
         {
             CompleteTargeting(mouseWorldPos);
+            InputBlocker.ClickConsumedThisFrame = true;
         }
         else if (mouse.rightButton.wasPressedThisFrame)
         {
             CancelTargeting();
+            InputBlocker.ClickConsumedThisFrame = true;
         }
     }
 
@@ -60,12 +62,15 @@ public class AbilityTargetingSystem : MonoBehaviour
         isTargeting = true;
         currentlyTargeting = ability;
         CreatePreviewObject(ability);
+       
         return true;
     }
 
     public void CancelTargeting()
     {
-        if (isTargeting && currentlyTargeting != null && abilityManager.CurrentSelectedUnit != null)
+        if (!isTargeting) return; // nothing to cancel
+
+        if (currentlyTargeting != null && abilityManager.CurrentSelectedUnit != null)
         {
             currentlyTargeting.Cancel(abilityManager.CurrentSelectedUnit.gameObject);
         }
@@ -73,7 +78,15 @@ public class AbilityTargetingSystem : MonoBehaviour
         isTargeting = false;
         currentlyTargeting = null;
         DestroyPreviewObject();
+
+        //  Only reset cursor if we actually had switched it
+        if (CursorManager.Instance != null)
+        {
+            Debug.Log("[AbilityTargetingSystem] CancelTargeting -> Resetting cursor to Default");
+            CursorManager.Instance.SetCursor("Default");
+        }
     }
+
 
     public void CompleteTargeting(Vector3 targetPosition)
     {
@@ -96,54 +109,52 @@ public class AbilityTargetingSystem : MonoBehaviour
         var caster = abilityManager.CurrentSelectedUnit;
         float distance;
 
-        if (targetTransform != null) // chasing a unit
-        {
+        if (targetTransform != null)
             distance = Vector3.Distance(caster.transform.position, targetTransform.position);
-        }
-        else // area or point targeting
-        {
+        else
             distance = Vector3.Distance(caster.transform.position, targetPosition);
-        }
 
-        if (distance > currentlyTargeting.Range)
-{
-    var abilityMove = new AbilityMoveCommand(
-        caster.gameObject,
-        currentlyTargeting,
-        targetTransform,
-        targetPosition
-    );
+        //  Store before cleanup
+        IAbility abilityToCast = currentlyTargeting;
 
-    // Execute now if not paused; otherwise queue.
-    if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
-        CommandQueue.Instance.QueueCommand(abilityMove);
-    else
-        abilityMove.Execute();
-
-    isTargeting = false;
-    currentlyTargeting = null;
-    DestroyPreviewObject();
-    return;
-}
-
-
-        // In range cast immediately
-        bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
-        if (paused)
+        if (distance > abilityToCast.Range)
         {
-            CommandQueue.Instance.QueueCommand(
-                new AbilityCastCommand(caster.gameObject, currentlyTargeting, targetPosition, targetObject));
+            var abilityMove = new AbilityMoveCommand(
+                caster.gameObject,
+                abilityToCast,
+                targetTransform,
+                targetPosition
+            );
+
+            if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
+                CommandQueue.Instance.QueueCommand(abilityMove);
+            else
+                abilityMove.Execute();
         }
         else
         {
-            abilityManager.GetComponent<AbilityExecutor>()
-                .ExecuteAbility(currentlyTargeting, targetPosition, targetObject);
+            bool paused = PauseManager.Instance != null && PauseManager.Instance.IsPaused;
+            if (paused)
+            {
+                CommandQueue.Instance.QueueCommand(
+                    new AbilityCastCommand(caster.gameObject, abilityToCast, targetPosition, targetObject));
+            }
+            else
+            {
+                abilityManager.GetComponent<AbilityExecutor>()
+                    .ExecuteAbility(abilityToCast, targetPosition, targetObject);
+            }
         }
 
+        // cleanup AFTER cast
         isTargeting = false;
         currentlyTargeting = null;
         DestroyPreviewObject();
+
+        if (CursorManager.Instance != null)
+            CursorManager.Instance.SetCursor("Default");
     }
+
 
 
     private bool IsValidTarget(GameObject target, TargetType targetType)
