@@ -78,11 +78,11 @@ public class UnitDeadState : StateMachineBehaviour
         unit.transform.rotation = Quaternion.Euler(90f, unit.transform.rotation.eulerAngles.y, unit.transform.rotation.eulerAngles.z);
 
         // 6. Disable health bar
-        HealthTracker healthBar = unit.GetComponentInChildren<HealthTracker>();
-        if (healthBar != null)
-        {
-            healthBar.gameObject.SetActive(false);
-        }
+        //HealthTracker healthBar = unit.GetComponentInChildren<HealthTracker>();
+        //if (healthBar != null)
+        //{
+        //    healthBar.gameObject.SetActive(false);
+        //}
 
         // 7. Disable guard area display
         GuardAreaDisplay guardDisplay = unit.GetComponent<GuardAreaDisplay>();
