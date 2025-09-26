@@ -262,9 +262,10 @@ public class UnitSelectionManager : MonoBehaviour
 
     private void TriggerSelectionIndicator(GameObject unit, bool isVisible)
     {
-        if (unit != null && unit.transform.childCount > 0)
+        Transform indicator = unit.transform.Find("SelectionIndicator");
+        if (indicator != null)
         {
-            unit.transform.GetChild(0).gameObject.SetActive(isVisible);
+            indicator.gameObject.SetActive(isVisible);
         }
     }
 
