@@ -75,16 +75,7 @@ public class AbilityTargetingSystem : MonoBehaviour
             currentlyTargeting.Cancel(abilityManager.CurrentSelectedUnit.gameObject);
         }
 
-        isTargeting = false;
-        currentlyTargeting = null;
-        DestroyPreviewObject();
-
-        //  Only reset cursor if we actually had switched it
-        if (CursorManager.Instance != null)
-        {
-            Debug.Log("[AbilityTargetingSystem] CancelTargeting -> Resetting cursor to Default");
-            CursorManager.Instance.SetCursor("Default");
-        }
+        ResetTargetingState();
     }
 
 
@@ -92,13 +83,15 @@ public class AbilityTargetingSystem : MonoBehaviour
     {
         if (currentlyTargeting == null || abilityManager.CurrentSelectedUnit == null) return;
 
+        //  Cache before cleanup
+        IAbility abilityToCast = currentlyTargeting;
         GameObject targetObject = null;
         Transform targetTransform = null;
 
-        if (currentlyTargeting.TargetType == TargetType.Ally || currentlyTargeting.TargetType == TargetType.Enemy)
+        if (abilityToCast.TargetType == TargetType.Ally || abilityToCast.TargetType == TargetType.Enemy)
         {
             targetObject = GetTargetAtPosition(targetPosition);
-            if (targetObject == null || !IsValidTarget(targetObject, currentlyTargeting.TargetType))
+            if (targetObject == null || !IsValidTarget(targetObject, abilityToCast.TargetType))
             {
                 CancelTargeting();
                 return;
@@ -107,24 +100,13 @@ public class AbilityTargetingSystem : MonoBehaviour
         }
 
         var caster = abilityManager.CurrentSelectedUnit;
-        float distance;
-
-        if (targetTransform != null)
-            distance = Vector3.Distance(caster.transform.position, targetTransform.position);
-        else
-            distance = Vector3.Distance(caster.transform.position, targetPosition);
-
-        //  Store before cleanup
-        IAbility abilityToCast = currentlyTargeting;
+        float distance = targetTransform != null
+            ? Vector3.Distance(caster.transform.position, targetTransform.position)
+            : Vector3.Distance(caster.transform.position, targetPosition);
 
         if (distance > abilityToCast.Range)
         {
-            var abilityMove = new AbilityMoveCommand(
-                caster.gameObject,
-                abilityToCast,
-                targetTransform,
-                targetPosition
-            );
+            var abilityMove = new AbilityMoveCommand(caster.gameObject, abilityToCast, targetTransform, targetPosition);
 
             if (PauseManager.Instance != null && PauseManager.Instance.IsPaused)
                 CommandQueue.Instance.QueueCommand(abilityMove);
@@ -146,15 +128,22 @@ public class AbilityTargetingSystem : MonoBehaviour
             }
         }
 
-        // cleanup AFTER cast
+        Debug.Log("[AbilityTargetingSystem] CompleteTargeting -> Resetting state");
+        ResetTargetingState();
+    }
+
+
+    private void ResetTargetingState()
+    {
         isTargeting = false;
         currentlyTargeting = null;
         DestroyPreviewObject();
 
         if (CursorManager.Instance != null)
+        {
             CursorManager.Instance.SetCursor("Default");
+        }
     }
-
 
 
     private bool IsValidTarget(GameObject target, TargetType targetType)
